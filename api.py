@@ -1,22 +1,26 @@
 """Lightweight API layer for online functionality."""
 
 from __future__ import annotations
+# pyright: reportUnusedFunction=false
 
-from typing import Any, Dict
+import importlib
+from typing import Any, Dict, cast
 
 from game_engine import GameEngine
 
 
-def create_app(engine: GameEngine):
+def create_app(engine: GameEngine) -> Any:
     """Create a Flask app exposing game state and save operations."""
     try:
-        from flask import Flask, jsonify, request
+        flask_module = importlib.import_module("flask")
     except Exception as exc:
         raise RuntimeError(
             "Flask is not installed. Install dependencies from requirements.txt."
         ) from exc
 
-    app = Flask(__name__)
+    flask_class = getattr(flask_module, "Flask")
+    request = getattr(flask_module, "request")
+    app: Any = flask_class(__name__)
 
     @app.get("/health")
     def health() -> tuple[Dict[str, str], int]:
@@ -37,7 +41,12 @@ def create_app(engine: GameEngine):
 
     @app.post("/command")
     def command() -> tuple[Dict[str, Any], int]:
-        payload = request.get_json(silent=True) or {}
+        payload_raw = request.get_json(silent=True)
+        payload: Dict[str, Any] = {}
+        if isinstance(payload_raw, dict):
+            raw_dict = cast(Dict[Any, Any], payload_raw)
+            for key, value in raw_dict.items():
+                payload[str(key)] = value
         raw = str(payload.get("command", "")).strip()
         if not raw:
             return {"error": "command is required"}, 400
