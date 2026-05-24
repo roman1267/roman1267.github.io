@@ -1,0 +1,23 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: haunted-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  game:
+    build: .
+    container_name: haunted-game
+    depends_on:
+      - mongodb
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+    stdin_open: true
+    tty: true
+    command: ["python", "main.py", "--mode", "cli"]
+
+volumes:
+  mongodb_data:
