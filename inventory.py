@@ -1,14 +1,19 @@
 """Inventory management model."""
 
 from dataclasses import dataclass, field
-from typing import Iterable, List
+from typing import Iterable
+
+
+def _empty_items() -> list[str]:
+    """Create a typed empty list for dataclass default values."""
+    return []
 
 
 @dataclass
 class Inventory:
     """Stores and manages player items."""
 
-    items: List[str] = field(default_factory=list)
+    items: list[str] = field(default_factory=_empty_items)
 
     def add(self, item_name: str) -> None:
         """Add an item to inventory if it is not already present."""
@@ -23,7 +28,7 @@ class Inventory:
         """Return the number of items in the inventory."""
         return len(self.items)
 
-    def to_list(self) -> List[str]:
+    def to_list(self) -> list[str]:
         """Return a copy of items for serialization/display."""
         return list(self.items)
 

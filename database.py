@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import os
+from importlib import import_module
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from player import Player
 
@@ -25,21 +26,23 @@ class MongoGameRepository:
         self.uri = uri or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
         self.database_name = database_name
         self.collection_name = collection_name
-        self._client = None
-        self._collection = None
+        self._client: Any | None = None
+        self._collection: Any | None = None
 
     def connect(self) -> None:
         """Create MongoDB client and validate connectivity."""
         try:
-            from pymongo import MongoClient
-            from pymongo.errors import PyMongoError
+            pymongo_module = import_module("pymongo")
+            pymongo_errors = import_module("pymongo.errors")
+            mongo_client_ctor = getattr(pymongo_module, "MongoClient")
+            pymongo_error_type = getattr(pymongo_errors, "PyMongoError")
         except Exception as exc:
             raise DatabaseError(
                 "PyMongo is not installed. Install dependencies from requirements.txt."
             ) from exc
 
         try:
-            self._client = MongoClient(
+            self._client = mongo_client_ctor(
                 self.uri,
                 maxPoolSize=20,
                 minPoolSize=0,
@@ -47,9 +50,11 @@ class MongoGameRepository:
                 connectTimeoutMS=5000,
                 serverSelectionTimeoutMS=5000,
             )
+            if self._client is None:
+                raise DatabaseError("MongoDB client initialization failed.")
             self._client.admin.command("ping")
             self._collection = self._client[self.database_name][self.collection_name]
-        except PyMongoError as exc:
+        except pymongo_error_type as exc:
             raise DatabaseError(f"Unable to connect to MongoDB: {exc}") from exc
 
     def save_game(self, slot: str, player: Player) -> None:
@@ -74,7 +79,9 @@ class MongoGameRepository:
             raise DatabaseError("Database is not connected.")
 
         data = self._collection.find_one({"slot": slot}, {"_id": 0})
-        return data
+        if isinstance(data, dict):
+            return cast(Dict[str, Any], data)
+        return None
 
     def list_saves(self) -> list[Dict[str, Any]]:
         """List available save slots."""
