@@ -4,9 +4,13 @@ from __future__ import annotations
 # pyright: reportUnusedFunction=false
 
 import importlib
+import logging
 from typing import Any, Dict, cast
 
 from game_engine import GameEngine
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(engine: GameEngine) -> Any:
@@ -24,10 +28,12 @@ def create_app(engine: GameEngine) -> Any:
 
     @app.get("/health")
     def health() -> tuple[Dict[str, str], int]:
+        logger.debug("GET /health")
         return {"status": "ok"}, 200
 
     @app.get("/state")
     def state() -> tuple[Dict[str, Any], int]:
+        logger.debug("GET /state room=%s", engine.player.current_room)
         room = engine.rooms[engine.player.current_room]
         return (
             {
@@ -49,18 +55,22 @@ def create_app(engine: GameEngine) -> Any:
                 payload[str(key)] = value
         raw = str(payload.get("command", "")).strip()
         if not raw:
+            logger.warning("POST /command missing command payload")
             return {"error": "command is required"}, 400
 
+        logger.info("POST /command command=%s", raw)
         message = engine.process_command(raw)
         return {"message": message, "running": engine.is_running}, 200
 
     @app.post("/save/<slot>")
     def save(slot: str) -> tuple[Dict[str, str], int]:
+        logger.info("POST /save slot=%s", slot)
         message = engine.process_command(f"save {slot}")
         return {"message": message}, 200
 
     @app.get("/saves")
     def saves() -> tuple[Dict[str, str], int]:
+        logger.debug("GET /saves")
         message = engine.process_command("saves")
         return {"message": message}, 200
 

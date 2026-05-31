@@ -3,13 +3,20 @@
 from __future__ import annotations
 
 import time
-from typing import Dict
+from typing import Callable, Dict
 
-from combat import CombatSystem
+from combat import CombatResult, CombatSystem
 from database import DatabaseError, MongoGameRepository
+from event_system import EventQueue, GameEvent
 from inventory import Inventory
 from player import Player
 from room import Room
+from world_graph import WorldGraph
+
+
+def _normalize_text(value: str) -> str:
+    """Normalize user text for dictionary-based lookups."""
+    return " ".join(value.strip().lower().split())
 
 
 class GameEngine:
@@ -18,10 +25,48 @@ class GameEngine:
     def __init__(self, sleep_seconds: float = 0.4) -> None:
         self.sleep_seconds = sleep_seconds
         self.rooms = self._build_rooms()
+        self.world = self._build_world_graph(self.rooms)
+        self.room_lookup = { _normalize_text(name): name for name in self.rooms }
+        self.item_lookup = self._build_item_lookup(self.rooms)
         self.player = Player(current_room="Garden", inventory=Inventory())
         self.required_items = 6
         self.combat = CombatSystem(villain_room="Attic", required_item_count=self.required_items)
         self.repository = MongoGameRepository()
+        self.event_queue = EventQueue()
+        self.turn_counter = 0
+        self.command_aliases = {
+            "move": "go",
+            "walk": "go",
+            "take": "get",
+            "pick": "get",
+            "inv": "inventory",
+            "i": "inventory",
+            "path": "route",
+            "exit": "quit",
+            "l": "look",
+        }
+        self.direction_aliases = {
+            "n": "North",
+            "s": "South",
+            "e": "East",
+            "w": "West",
+            "north": "North",
+            "south": "South",
+            "east": "East",
+            "west": "West",
+        }
+        self.command_handlers: dict[str, Callable[[list[str]], str]] = {
+            "go": self._cmd_go,
+            "get": self._cmd_get,
+            "inventory": self._cmd_inventory,
+            "save": self._cmd_save,
+            "load": self._cmd_load,
+            "saves": self._cmd_saves,
+            "help": self._cmd_help,
+            "route": self._cmd_route,
+            "look": self._cmd_look,
+            "quit": self._cmd_quit,
+        }
         self.is_running = True
 
     @staticmethod
@@ -55,6 +100,25 @@ class GameEngine:
             "Garden": Room(name="Garden", exits={"East": "Entrance Hall"}, item=None),
         }
 
+    @staticmethod
+    def _build_world_graph(rooms: Dict[str, Room]) -> WorldGraph:
+        """Build graph from room exit mappings for traversal algorithms."""
+        world = WorldGraph()
+        for room_name, room in rooms.items():
+            world.add_room(room_name)
+            for direction, destination in room.exits.items():
+                world.add_edge(room_name, direction, destination)
+        return world
+
+    @staticmethod
+    def _build_item_lookup(rooms: Dict[str, Room]) -> dict[str, str]:
+        """Create normalized item lookup map for scalable name resolution."""
+        item_lookup: dict[str, str] = {}
+        for room in rooms.values():
+            if room.item:
+                item_lookup[_normalize_text(room.item)] = room.item
+        return item_lookup
+
     def initialize(self) -> str:
         """Initialize systems and return startup message."""
         try:
@@ -71,14 +135,15 @@ class GameEngine:
     def format_status(self) -> str:
         """Render current room, inventory, exits, and room item."""
         room = self.rooms[self.player.current_room]
-        inventory_display = ", ".join(self.player.inventory.to_list()) or "Empty"
-        exits_display = ", ".join(room.exits.keys()) or "None"
+        inventory_display = ", ".join(self.player.inventory.to_detailed_list()) or "Empty"
+        exits_display = ", ".join(self.world.directions_from(room.name).keys()) or "None"
 
         lines = [
             "\n" + "=" * 64,
             f"Location : {room.name}",
             f"Inventory: {inventory_display}",
             f"Exits    : {exits_display}",
+            f"Turn     : {self.turn_counter}",
             "-" * 64,
         ]
 
@@ -91,81 +156,178 @@ class GameEngine:
         return "\n".join(lines)
 
     def process_command(self, raw_command: str) -> str:
-        """Parse and execute a user command."""
-        tokens = raw_command.strip().split()
-        if not tokens:
+        """Parse and execute a user command using dispatch table lookup."""
+        command, args = self._parse_command(raw_command)
+        if not command:
             return "Please enter a command."
 
+        handler = self.command_handlers.get(command)
+        if handler is None:
+            return "Invalid command. Type 'help' to see available commands."
+
+        return handler(args)
+
+    def _parse_command(self, raw_command: str) -> tuple[str, list[str]]:
+        """Tokenize and normalize command names for constant-time dispatch."""
+        tokens = raw_command.strip().split()
+        if not tokens:
+            return "", []
+
         command = tokens[0].lower()
+        command = self.command_aliases.get(command, command)
+        return command, tokens[1:]
 
-        if command == "go":
-            if len(tokens) < 2:
-                return "Go where? Use: go <North|South|East|West>."
-            return self._handle_move(tokens[1].capitalize())
+    def _cmd_go(self, args: list[str]) -> str:
+        if not args:
+            return "Go where? Use: go <North|South|East|West>."
 
-        if command == "get":
-            if len(tokens) < 2:
-                return "Get what? Use: get <item name>."
-            return self._handle_get_item(" ".join(tokens[1:]))
+        direction_key = args[0].lower()
+        direction = self.direction_aliases.get(direction_key)
+        if direction is None:
+            return "Unknown direction. Use North, South, East, or West."
 
-        if command == "inventory":
-            display = ", ".join(self.player.inventory.to_list()) or "Empty"
-            return f"Inventory: {display}"
-
-        if command == "save":
-            slot = tokens[1] if len(tokens) > 1 else "default"
-            return self._handle_save(slot)
-
-        if command == "load":
-            slot = tokens[1] if len(tokens) > 1 else "default"
-            return self._handle_load(slot)
-
-        if command == "saves":
-            return self._handle_list_saves()
-
-        if command == "help":
-            return (
-                "Commands: go <direction>, get <item>, inventory, save [slot], "
-                "load [slot], saves, help, quit"
-            )
-
-        if command == "quit":
-            self.is_running = False
-            return "Exiting game."
-
-        return "Invalid command. Type 'help' to see available commands."
-
-    def _handle_move(self, direction: str) -> str:
-        room = self.rooms[self.player.current_room]
-        if not room.can_move(direction):
+        if not self.world.can_move(self.player.current_room, direction):
             return "You cannot go that way."
 
-        next_room_name = room.next_room(direction)
+        next_room_name = self.world.next_room(self.player.current_room, direction)
         if next_room_name is None:
             return "You cannot go that way."
 
         self.player.move_to(next_room_name)
-        outcome = self.combat.resolve_encounter(self.player)
-        if outcome == "win":
+        self.turn_counter += 1
+        self._schedule_procedural_events(next_room_name)
+
+        combat_result = self.combat.resolve_encounter(self.player)
+        if combat_result.outcome == "win":
             self.is_running = False
-            return "Congratulations! You defeated the Phantom of Despair and escaped!"
-        if outcome == "lose":
+            return (
+                "Congratulations! You defeated the Phantom of Despair and escaped!\n"
+                f"{combat_result.summary}"
+            )
+        if combat_result.outcome == "lose":
             self.is_running = False
-            return "The Phantom of Despair consumed your courage... GAME OVER."
+            return f"The Phantom of Despair consumed your courage... GAME OVER.\n{combat_result.summary}"
+
+        event_messages = self._process_ready_events()
+        if event_messages:
+            return f"You move {direction} into the {next_room_name}.\n" + "\n".join(event_messages)
 
         return f"You move {direction} into the {next_room_name}."
+
+    def _cmd_get(self, args: list[str]) -> str:
+        if not args:
+            return "Get what? Use: get <item name>."
+        return self._handle_get_item(" ".join(args))
+
+    def _cmd_inventory(self, _args: list[str]) -> str:
+        display = ", ".join(self.player.inventory.to_detailed_list()) or "Empty"
+        return f"Inventory: {display}"
+
+    def _cmd_save(self, args: list[str]) -> str:
+        slot = args[0] if args else "default"
+        return self._handle_save(slot)
+
+    def _cmd_load(self, args: list[str]) -> str:
+        slot = args[0] if args else "default"
+        return self._handle_load(slot)
+
+    def _cmd_saves(self, _args: list[str]) -> str:
+        return self._handle_list_saves()
+
+    def _cmd_help(self, _args: list[str]) -> str:
+        return (
+            "Commands: go <direction>, get <item>, inventory, route <room>, look, "
+            "save [slot], load [slot], saves, help, quit"
+        )
+
+    def _cmd_route(self, args: list[str]) -> str:
+        if not args:
+            return "Route where? Use: route <room name>."
+
+        target_input = " ".join(args)
+        target_room = self.room_lookup.get(_normalize_text(target_input))
+        if target_room is None:
+            return "Unknown room name."
+
+        if target_room == self.player.current_room:
+            return "You are already in that room."
+
+        path_rooms = self.world.shortest_path_rooms(self.player.current_room, target_room)
+        path_directions = self.world.shortest_path_directions(self.player.current_room, target_room)
+
+        if not path_rooms or not path_directions:
+            return "No route is currently available."
+
+        room_string = " -> ".join(path_rooms)
+        direction_string = " -> ".join(path_directions)
+        return (
+            f"Shortest route to {target_room}: {direction_string}\n"
+            f"Room path: {room_string}"
+        )
+
+    def _cmd_look(self, _args: list[str]) -> str:
+        room = self.rooms[self.player.current_room]
+        exits_display = ", ".join(self.world.directions_from(room.name).keys()) or "None"
+        if room.item:
+            return f"You are in {room.name}. Exits: {exits_display}. You see {room.item}."
+        return f"You are in {room.name}. Exits: {exits_display}."
+
+    def _cmd_quit(self, _args: list[str]) -> str:
+        self.is_running = False
+        return "Exiting game."
+
+    def _schedule_procedural_events(self, entered_room: str) -> None:
+        """Create deterministic procedural events using turn counters and context."""
+        if self.turn_counter % 2 == 0:
+            self.event_queue.schedule(
+                GameEvent(
+                    priority=2,
+                    turn=self.turn_counter,
+                    name="whispers",
+                    message="A whisper crawls along the walls: 'Turn back while you can...'",
+                )
+            )
+
+        if entered_room == "Basement" and not self.player.inventory.contains("Lantern of Shadows"):
+            self.event_queue.schedule(
+                GameEvent(
+                    priority=1,
+                    turn=self.turn_counter,
+                    name="darkness",
+                    message="The darkness thickens. A lantern here might be useful.",
+                )
+            )
+
+        if self.turn_counter % 3 == 0:
+            self.event_queue.schedule(
+                GameEvent(
+                    priority=3,
+                    turn=self.turn_counter + 1,
+                    name="temperature_drop",
+                    message="The temperature suddenly drops as a shadow moves nearby.",
+                )
+            )
+
+    def _process_ready_events(self) -> list[str]:
+        """Process due events by priority and return user-facing messages."""
+        ready = self.event_queue.pop_ready(current_turn=self.turn_counter)
+        if not ready:
+            return []
+        return [f"[Event] {event.message}" for event in ready]
 
     def _handle_get_item(self, item_name: str) -> str:
         room = self.rooms[self.player.current_room]
         if room.item is None:
             return "There is nothing to pick up here."
 
-        if room.item != item_name:
+        requested_item = self.item_lookup.get(_normalize_text(item_name), item_name)
+        if room.item != requested_item:
             return "That item is not in this room."
 
-        self.player.inventory.add(item_name)
+        self.player.inventory.add(room.item)
+        self.item_lookup.pop(_normalize_text(room.item), None)
         room.item = None
-        return f"{item_name} retrieved."
+        return f"{requested_item} retrieved."
 
     def _handle_save(self, slot: str) -> str:
         try:

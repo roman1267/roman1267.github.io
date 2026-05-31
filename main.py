@@ -3,8 +3,20 @@
 from __future__ import annotations
 
 import argparse
+import logging
+import os
 
 from game_engine import GameEngine
+
+
+def configure_logging() -> None:
+    """Configure application logging for local and deployed runtimes."""
+    level_name = os.getenv("LOG_LEVEL", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
 
 
 def run_cli(engine: GameEngine) -> None:
@@ -52,6 +64,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """Program bootstrap."""
+    configure_logging()
     args = parse_args()
     engine = GameEngine()
 
