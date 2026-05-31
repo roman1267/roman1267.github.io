@@ -43,6 +43,28 @@ This artifact now includes algorithm-focused enhancements beyond basic condition
 - Python 3.11+
 - MongoDB (local instance or container)
 
+## Running Tests
+
+Install development dependencies:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+Run the test suite:
+
+```bash
+pytest
+```
+
+Current suite covers:
+
+- world graph traversal and movement checks
+- inventory dictionary/list behavior
+- combat stat calculation outcomes
+- event-priority queue behavior
+- game command parsing and alias handling
+
 ## Local Run (CLI)
 
 1. Install dependencies:
