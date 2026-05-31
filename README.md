@@ -65,6 +65,22 @@ Current suite covers:
 - event-priority queue behavior
 - game command parsing and alias handling
 
+## Continuous Integration (CI)
+
+GitHub Actions workflow: `.github/workflows/ci.yml`
+
+CI runs automatically on:
+
+- push to `main` or `master`
+- pull requests targeting `main` or `master`
+- manual runs via `workflow_dispatch`
+
+CI job behavior:
+
+- tests on Python `3.11` and `3.12`
+- installs dependencies from `requirements-dev.txt`
+- runs `pytest -q`
+
 ## Local Run (CLI)
 
 1. Install dependencies:
