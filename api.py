@@ -24,7 +24,11 @@ def create_app(engine: GameEngine) -> Any:
 
     flask_class = getattr(flask_module, "Flask")
     request = getattr(flask_module, "request")
-    app: Any = flask_class(__name__)
+    app: Any = flask_class(__name__, static_folder="web", static_url_path="/web")
+
+    @app.get("/")
+    def index() -> Any:
+        return app.send_static_file("index.html")
 
     @app.get("/health")
     def health() -> tuple[Dict[str, str], int]:
@@ -73,5 +77,11 @@ def create_app(engine: GameEngine) -> Any:
         logger.debug("GET /saves")
         message = engine.process_command("saves")
         return {"message": message}, 200
+
+    @app.post("/reset")
+    def reset() -> tuple[Dict[str, str], int]:
+        logger.info("POST /reset")
+        engine.reset()
+        return {"message": "New game started."}, 200
 
     return app

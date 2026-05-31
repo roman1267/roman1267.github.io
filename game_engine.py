@@ -381,3 +381,15 @@ class GameEngine:
     def loop_delay(self) -> None:
         """Small pause to preserve the original game's pacing."""
         time.sleep(self.sleep_seconds)
+
+    def reset(self) -> None:
+        """Reset in-memory game state for a fresh run."""
+        self.rooms = self._build_rooms()
+        self.world = self._build_world_graph(self.rooms)
+        self.room_lookup = {_normalize_text(name): name for name in self.rooms}
+        self.item_lookup = self._build_item_lookup(self.rooms)
+        self.player = Player(current_room="Garden", inventory=Inventory())
+        self.combat = CombatSystem(villain_room="Attic", required_item_count=self.required_items)
+        self.event_queue = EventQueue()
+        self.turn_counter = 0
+        self.is_running = True

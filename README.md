@@ -75,6 +75,12 @@ python TextBasedGame.py
 python main.py --mode api --host 0.0.0.0 --port 8000
 ```
 
+Then open the browser UI at:
+
+```text
+http://localhost:8000/
+```
+
 ### API Endpoints
 
 - `GET /health` - service health
@@ -82,6 +88,30 @@ python main.py --mode api --host 0.0.0.0 --port 8000
 - `POST /command` - execute command, JSON body: `{ "command": "go East" }`
 - `POST /save/<slot>` - save to slot
 - `GET /saves` - list save slots
+- `POST /reset` - reset in-memory game state for a fresh run
+
+## Browser UI
+
+The web interface is served by Flask from `web/` and supports:
+
+- movement buttons generated from current exits
+- room item pickup with one click
+- command console for advanced commands
+- shortest-path routing (`route <room>`)
+- save/load slot actions
+- event log and live state refresh
+
+Launch command:
+
+```bash
+python main.py --mode api --host 0.0.0.0 --port 8000
+```
+
+Open:
+
+```text
+http://localhost:8000/
+```
 
 ## Docker Run
 

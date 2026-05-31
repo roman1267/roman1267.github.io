@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Haunted Mansion Escape - Web UI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/web/styles.css" />
+</head>
+<body>
+  <div class="backdrop-shape backdrop-shape-a"></div>
+  <div class="backdrop-shape backdrop-shape-b"></div>
+
+  <main class="app-shell">
+    <header class="topbar">
+      <h1>Haunted Mansion Escape</h1>
+      <div class="topbar-actions">
+        <button id="refresh-btn" class="btn btn-secondary" type="button">Refresh</button>
+        <button id="reset-btn" class="btn btn-danger" type="button">New Run</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="panel panel-location">
+        <h2>Location</h2>
+        <p id="current-room" class="value">-</p>
+        <p id="room-item" class="subtle">No item in room.</p>
+        <button id="pickup-btn" class="btn" type="button" disabled>Pick Up Item</button>
+      </article>
+
+      <article class="panel panel-inventory">
+        <h2>Inventory</h2>
+        <ul id="inventory-list" class="tag-list">
+          <li class="tag empty">Empty</li>
+        </ul>
+      </article>
+
+      <article class="panel panel-move">
+        <h2>Movement</h2>
+        <div id="exit-buttons" class="button-grid"></div>
+      </article>
+
+      <article class="panel panel-route">
+        <h2>Pathfinding</h2>
+        <label for="route-room">Find shortest route to room</label>
+        <div class="inline-form">
+          <input id="route-room" type="text" placeholder="Attic" />
+          <button id="route-btn" class="btn btn-secondary" type="button">Route</button>
+        </div>
+      </article>
+
+      <article class="panel panel-save">
+        <h2>Save / Load</h2>
+        <label for="save-slot">Slot name</label>
+        <div class="inline-form">
+          <input id="save-slot" type="text" value="default" />
+          <button id="save-btn" class="btn btn-secondary" type="button">Save</button>
+          <button id="load-btn" class="btn btn-secondary" type="button">Load</button>
+        </div>
+      </article>
+
+      <article class="panel panel-command">
+        <h2>Command Console</h2>
+        <div class="inline-form">
+          <input id="command-input" type="text" placeholder="go east" />
+          <button id="send-command-btn" class="btn" type="button">Send</button>
+        </div>
+        <div id="last-message" class="message-box">Ready.</div>
+      </article>
+
+      <article class="panel panel-log">
+        <h2>Event Log</h2>
+        <ul id="event-log" class="log-list"></ul>
+      </article>
+    </section>
+  </main>
+
+  <script src="/web/app.js" defer></script>
+</body>
+</html>
