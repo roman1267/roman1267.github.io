@@ -123,6 +123,10 @@ class GameEngine:
         """Initialize systems and return startup message."""
         try:
             self.repository.connect()
+            self.rooms = self.repository.load_or_seed_rooms(self.rooms)
+            self.world = self._build_world_graph(self.rooms)
+            self.room_lookup = {_normalize_text(name): name for name in self.rooms}
+            self.item_lookup = self._build_item_lookup(self.rooms)
             db_state = "MongoDB connected"
         except DatabaseError as exc:
             db_state = f"MongoDB unavailable ({exc}). Save/load commands will be disabled."
@@ -331,7 +335,7 @@ class GameEngine:
 
     def _handle_save(self, slot: str) -> str:
         try:
-            self.repository.save_game(slot, self.player)
+            self.repository.save_game(slot, self.player, turn_counter=self.turn_counter)
             return f"Game saved to slot '{slot}'."
         except DatabaseError as exc:
             return f"Save failed: {exc}"
@@ -356,6 +360,9 @@ class GameEngine:
 
         self.player.current_room = saved_room
         self.player.inventory = Inventory.from_iterable(player_data.get("inventory", []))
+        raw_turn_counter = data.get("turn_counter", 0)
+        if isinstance(raw_turn_counter, int):
+            self.turn_counter = max(0, raw_turn_counter)
         return f"Game loaded from slot '{slot}'."
 
     def _handle_list_saves(self) -> str:

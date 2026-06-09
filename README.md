@@ -24,6 +24,18 @@ This artifact now includes algorithm-focused enhancements beyond basic condition
 - Priority queue procedural event system for scalable dynamic encounters
 - Scalable room and item lookup maps for future content expansion
 
+## Category Three: Databases
+
+This artifact now includes a database-driven persistence architecture in MongoDB:
+
+- MongoDB integration with a repository abstraction layer
+- Multi-collection schema for `players`, `inventory`, `rooms`, `game_state`, and `game_sessions`
+- Persistent save/load state with turn counter persistence
+- Persistent inventory tracking through dedicated inventory documents
+- Dynamic room loading from MongoDB with fallback seeding from defaults
+- Session event logging for future analytics/multiplayer-oriented extensions
+- Docker-based MongoDB runtime support for local development
+
 ## Project Structure
 
 - `TextBasedGame.py` - legacy launcher that starts the new architecture
