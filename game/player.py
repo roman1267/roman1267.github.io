@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from inventory import Inventory
+from .inventory import Inventory
 
 
 @dataclass

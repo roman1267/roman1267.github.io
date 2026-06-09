@@ -1,4 +1,4 @@
-from event_system import EventQueue, GameEvent
+from game.event_system import EventQueue, GameEvent
 
 
 def test_event_queue_priority_ordering() -> None:

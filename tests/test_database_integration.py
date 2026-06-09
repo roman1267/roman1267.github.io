@@ -4,10 +4,10 @@ import os
 
 import pytest
 
-from database import MongoGameRepository
-from inventory import Inventory
-from player import Player
-from room import Room
+from game.database import MongoGameRepository
+from game.inventory import Inventory
+from game.player import Player
+from game.room import Room
 
 
 pytestmark = pytest.mark.integration

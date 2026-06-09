@@ -1,4 +1,4 @@
-from inventory import Inventory
+from game.inventory import Inventory
 
 
 def test_inventory_tracks_order_and_counts() -> None:

@@ -1,6 +1,6 @@
-from database import MongoGameRepository
-from game_engine import GameEngine
-from room import Room
+from game.database import MongoGameRepository
+from game.game_engine import GameEngine
+from game.room import Room
 
 
 def test_load_or_seed_rooms_seeds_when_empty() -> None:

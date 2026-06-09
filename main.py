@@ -6,7 +6,7 @@ import argparse
 import logging
 import os
 
-from game_engine import GameEngine
+from game.game_engine import GameEngine
 
 
 def configure_logging() -> None:

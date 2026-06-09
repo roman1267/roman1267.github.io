@@ -5,13 +5,13 @@ from __future__ import annotations
 import time
 from typing import Callable, Dict
 
-from combat import CombatResult, CombatSystem, EnemyProfile
-from database import DatabaseError, MongoGameRepository
-from event_system import EventQueue, GameEvent
-from inventory import Inventory
-from player import Player
-from room import Room
-from world_graph import WorldGraph
+from .combat import CombatResult, CombatSystem, EnemyProfile
+from .database import DatabaseError, MongoGameRepository
+from .event_system import EventQueue, GameEvent
+from .inventory import Inventory
+from .player import Player
+from .room import Room
+from .world_graph import WorldGraph
 
 
 def _normalize_text(value: str) -> str:

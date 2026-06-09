@@ -1,4 +1,4 @@
-from game_engine import GameEngine
+from game.game_engine import GameEngine
 
 
 def test_command_alias_and_item_lookup() -> None:

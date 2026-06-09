@@ -1,4 +1,4 @@
-from game_engine import GameEngine
+from game.game_engine import GameEngine
 
 
 def test_shortest_path_from_garden_to_attic() -> None:

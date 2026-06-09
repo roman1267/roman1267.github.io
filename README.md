@@ -42,12 +42,13 @@ This artifact now includes a database-driven persistence architecture in MongoDB
 
 - `TextBasedGame.py` - legacy launcher that starts the new architecture
 - `main.py` - application entrypoint (`cli` or `api` mode)
-- `game_engine.py` - core orchestration and command processing
-- `player.py` - player model
-- `room.py` - room model and movement rules
-- `inventory.py` - inventory model
-- `combat.py` - encounter resolution
-- `database.py` - MongoDB persistence layer
+- `game/` - core game package containing orchestration, models, combat, traversal, and persistence
+- `game/game_engine.py` - core orchestration and command processing
+- `game/player.py` - player model
+- `game/room.py` - room model and movement rules
+- `game/inventory.py` - inventory model
+- `game/combat.py` - encounter resolution
+- `game/database.py` - MongoDB persistence layer
 - `api.py` - Flask API endpoints
 - `requirements.txt` - Python dependencies
 - `Dockerfile` / `docker-compose.yml` - container setup

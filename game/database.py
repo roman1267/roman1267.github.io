@@ -7,8 +7,8 @@ from importlib import import_module
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, cast
 
-from player import Player
-from room import Room
+from .player import Player
+from .room import Room
 
 
 class DatabaseError(Exception):

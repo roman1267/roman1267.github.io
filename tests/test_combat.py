@@ -1,6 +1,6 @@
-from combat import CombatSystem
-from inventory import Inventory
-from player import Player
+from game.combat import CombatSystem
+from game.inventory import Inventory
+from game.player import Player
 
 
 ALL_ITEMS = [

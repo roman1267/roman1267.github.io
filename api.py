@@ -7,7 +7,7 @@ import importlib
 import logging
 from typing import Any, Dict, cast
 
-from game_engine import GameEngine
+from game.game_engine import GameEngine
 
 
 logger = logging.getLogger(__name__)

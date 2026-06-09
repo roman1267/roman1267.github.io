@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 
-from game_engine import GameEngine
+from game.game_engine import GameEngine
 from api import create_app
 
 
