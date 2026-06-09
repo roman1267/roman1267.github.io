@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from player import Player
 
@@ -18,29 +19,56 @@ class CombatResult:
     summary: str
 
 
+@dataclass
+class EnemyProfile:
+    """Enemy configuration loaded from the database or defaults."""
+
+    name: str
+    room: str
+    base_hp: int
+    base_attack: int
+    base_defense: int
+    item_attack_bonuses: dict[str, int]
+    item_defense_bonuses: dict[str, int]
+
+
 class CombatSystem:
     """Resolves villain encounters with stat and item modifiers."""
 
-    def __init__(self, villain_room: str, required_item_count: int) -> None:
-        self.villain_room = villain_room
+    def __init__(
+        self,
+        required_item_count: int = 6,
+        enemy_profile: EnemyProfile | None = None,
+        villain_room: str | None = None,
+    ) -> None:
         self.required_item_count = required_item_count
-        self.enemy_base_hp = 28
-        self.enemy_base_attack = 9
-        self.enemy_base_defense = 5
-        self._item_attack_bonus = {
-            "Silver Knife": 4,
-            "Crystal Orb": 3,
-            "Cursed Amulet": 2,
-            "Golden Ring": 1,
-        }
-        self._item_defense_bonus = {
-            "Lantern of Shadows": 3,
-            "Key": 1,
-        }
+        self.enemy_profile = enemy_profile or EnemyProfile(
+            name="Phantom of Despair",
+            room=villain_room or "Attic",
+            base_hp=28,
+            base_attack=9,
+            base_defense=5,
+            item_attack_bonuses={
+                "Silver Knife": 4,
+                "Crystal Orb": 3,
+                "Cursed Amulet": 2,
+                "Golden Ring": 1,
+            },
+            item_defense_bonuses={
+                "Lantern of Shadows": 3,
+                "Key": 1,
+            },
+        )
+        if villain_room is not None:
+            self.enemy_profile.room = villain_room
+
+    def update_enemy_profile(self, enemy_profile: EnemyProfile) -> None:
+        """Replace the active enemy profile from persisted database data."""
+        self.enemy_profile = enemy_profile
 
     def resolve_encounter(self, player: Player) -> CombatResult:
         """Resolve encounter and return a detailed combat result."""
-        if player.current_room != self.villain_room:
+        if player.current_room != self.enemy_profile.room:
             return CombatResult(
                 outcome="none",
                 rounds=0,
@@ -55,9 +83,9 @@ class CombatSystem:
                 outcome="lose",
                 rounds=0,
                 player_hp=0,
-                enemy_hp=self.enemy_base_hp,
+                enemy_hp=self.enemy_profile.base_hp,
                 summary=(
-                    "The Phantom overwhelms you before battle can begin. "
+                    f"The {self.enemy_profile.name} overwhelms you before battle can begin. "
                     f"You still needed {missing} more item(s)."
                 ),
             )
@@ -73,12 +101,12 @@ class CombatSystem:
         player_defense = 4 + max(0, player.inventory.size() - 2)
 
         for item in inventory_items:
-            player_attack += self._item_attack_bonus.get(item, 0)
-            player_defense += self._item_defense_bonus.get(item, 0)
+            player_attack += self.enemy_profile.item_attack_bonuses.get(item, 0)
+            player_defense += self.enemy_profile.item_defense_bonuses.get(item, 0)
 
-        enemy_hp = self.enemy_base_hp + max(0, 2 - (player.inventory.size() // 3))
-        enemy_attack = self.enemy_base_attack
-        enemy_defense = self.enemy_base_defense
+        enemy_hp = self.enemy_profile.base_hp + max(0, 2 - (player.inventory.size() // 3))
+        enemy_attack = self.enemy_profile.base_attack
+        enemy_defense = self.enemy_profile.base_defense
 
         rounds = 0
         variance_cycle = [0, 1, -1, 2, -2]
@@ -103,7 +131,7 @@ class CombatSystem:
                 rounds=rounds,
                 player_hp=max(player_hp, 0),
                 enemy_hp=max(enemy_hp, 0),
-                summary=f"Victory in {rounds} rounds! You reduced the Phantom to 0 HP.",
+                summary=f"Victory in {rounds} rounds! You reduced the {self.enemy_profile.name} to 0 HP.",
             )
 
         return CombatResult(
@@ -111,5 +139,5 @@ class CombatSystem:
             rounds=rounds,
             player_hp=max(player_hp, 0),
             enemy_hp=max(enemy_hp, 0),
-            summary="Defeat. The Phantom of Despair outlasted your strength.",
+            summary=f"Defeat. The {self.enemy_profile.name} outlasted your strength.",
         )

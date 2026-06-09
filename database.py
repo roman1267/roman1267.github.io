@@ -29,6 +29,7 @@ class MongoGameRepository:
         self._players: Any | None = None
         self._inventory: Any | None = None
         self._rooms: Any | None = None
+        self._enemies: Any | None = None
         self._game_state: Any | None = None
         self._sessions: Any | None = None
 
@@ -65,6 +66,7 @@ class MongoGameRepository:
             self._players = database["players"]
             self._inventory = database["inventory"]
             self._rooms = database["rooms"]
+            self._enemies = database["enemies"]
             self._game_state = database["game_state"]
             self._sessions = database["game_sessions"]
             self._create_indexes()
@@ -77,6 +79,7 @@ class MongoGameRepository:
             self._players is None
             or self._inventory is None
             or self._rooms is None
+            or self._enemies is None
             or self._game_state is None
             or self._sessions is None
         ):
@@ -85,8 +88,10 @@ class MongoGameRepository:
         self._players.create_index("slot", unique=True)
         self._inventory.create_index("slot", unique=True)
         self._rooms.create_index("name", unique=True)
+        self._enemies.create_index("name", unique=True)
         self._game_state.create_index("slot", unique=True)
         self._sessions.create_index([("slot", 1), ("updated_at", -1)])
+        self._sessions.create_index("updated_at", expireAfterSeconds=60 * 60 * 24 * 30)
 
     def load_or_seed_rooms(self, default_rooms: Dict[str, Room]) -> Dict[str, Room]:
         """Load room documents from MongoDB or seed defaults if absent."""
@@ -126,6 +131,20 @@ class MongoGameRepository:
         if not loaded_rooms:
             return default_rooms
         return loaded_rooms
+
+    def load_or_seed_enemy(self, default_enemy: Dict[str, Any]) -> Dict[str, Any]:
+        """Load the primary enemy document from MongoDB or seed a default profile."""
+        if self._enemies is None:
+            raise DatabaseError("Database is not connected.")
+
+        enemy_doc = self._enemies.find_one({"name": default_enemy.get("name")}, {"_id": 0})
+        if not isinstance(enemy_doc, dict):
+            seed_doc = dict(default_enemy)
+            seed_doc["updated_at"] = self._utc_now()
+            self._enemies.update_one({"name": seed_doc["name"]}, {"$set": seed_doc}, upsert=True)
+            return seed_doc
+
+        return enemy_doc
 
     def save_game(self, slot: str, player: Player, turn_counter: int = 0) -> None:
         """Persist player, inventory, and game state to a named save slot."""

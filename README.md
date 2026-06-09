@@ -30,10 +30,12 @@ This artifact now includes a database-driven persistence architecture in MongoDB
 
 - MongoDB integration with a repository abstraction layer
 - Multi-collection schema for `players`, `inventory`, `rooms`, `game_state`, and `game_sessions`
+- Additional `enemies` collection for enemy profiles and combat configuration
 - Persistent save/load state with turn counter persistence
 - Persistent inventory tracking through dedicated inventory documents
 - Dynamic room loading from MongoDB with fallback seeding from defaults
 - Session event logging for future analytics/multiplayer-oriented extensions
+- TTL-based retention on session events for long-term storage control
 - Docker-based MongoDB runtime support for local development
 
 ## Project Structure

@@ -1,4 +1,5 @@
 from database import MongoGameRepository
+from game_engine import GameEngine
 from room import Room
 
 
@@ -59,3 +60,59 @@ def test_load_or_seed_rooms_rehydrates_room_objects() -> None:
 
     assert loaded["Garden"].exits == {"East": "Entrance Hall"}
     assert loaded["Entrance Hall"].item == "Crystal Orb"
+
+
+def test_load_or_seed_enemy_seeds_when_missing() -> None:
+    repository = MongoGameRepository()
+
+    class FakeEnemiesCollection:
+        def __init__(self) -> None:
+            self.upserted = None
+
+        def find_one(self, *_args, **_kwargs):
+            return None
+
+        def update_one(self, filter_doc, update_doc, upsert=False):
+            self.upserted = (filter_doc, update_doc, upsert)
+
+    fake_collection = FakeEnemiesCollection()
+    repository._enemies = fake_collection
+
+    default_enemy = {
+        "name": "Phantom of Despair",
+        "room": "Attic",
+        "base_hp": 28,
+        "base_attack": 9,
+        "base_defense": 5,
+        "item_attack_bonuses": {"Silver Knife": 4},
+        "item_defense_bonuses": {"Key": 1},
+    }
+
+    enemy_doc = repository.load_or_seed_enemy(default_enemy)
+
+    assert enemy_doc["name"] == "Phantom of Despair"
+    assert fake_collection.upserted is not None
+    assert fake_collection.upserted[0] == {"name": "Phantom of Despair"}
+    assert fake_collection.upserted[2] is True
+
+
+def test_enemy_profile_can_be_loaded_from_persisted_doc() -> None:
+    engine = GameEngine(sleep_seconds=0)
+
+    enemy_doc = {
+        "name": "Wraith King",
+        "room": "Attic",
+        "base_hp": 40,
+        "base_attack": 11,
+        "base_defense": 7,
+        "item_attack_bonuses": {"Crystal Orb": 5},
+        "item_defense_bonuses": {"Lantern of Shadows": 4},
+    }
+
+    profile = engine._enemy_profile_from_doc(enemy_doc)
+
+    assert profile.name == "Wraith King"
+    assert profile.room == "Attic"
+    assert profile.base_hp == 40
+    assert profile.item_attack_bonuses["Crystal Orb"] == 5
+    assert profile.item_defense_bonuses["Lantern of Shadows"] == 4

@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import Callable, Dict
 
-from combat import CombatResult, CombatSystem
+from combat import CombatResult, CombatSystem, EnemyProfile
 from database import DatabaseError, MongoGameRepository
 from event_system import EventQueue, GameEvent
 from inventory import Inventory
@@ -30,7 +30,8 @@ class GameEngine:
         self.item_lookup = self._build_item_lookup(self.rooms)
         self.player = Player(current_room="Garden", inventory=Inventory())
         self.required_items = 6
-        self.combat = CombatSystem(villain_room="Attic", required_item_count=self.required_items)
+        self.enemy_profile = self._build_default_enemy_profile()
+        self.combat = CombatSystem(required_item_count=self.required_items, enemy_profile=self.enemy_profile)
         self.repository = MongoGameRepository()
         self.event_queue = EventQueue()
         self.turn_counter = 0
@@ -119,11 +120,45 @@ class GameEngine:
                 item_lookup[_normalize_text(room.item)] = room.item
         return item_lookup
 
+    @staticmethod
+    def _build_default_enemy_profile() -> EnemyProfile:
+        """Create the default enemy profile used when MongoDB has no enemy seed."""
+        return EnemyProfile(
+            name="Phantom of Despair",
+            room="Attic",
+            base_hp=28,
+            base_attack=9,
+            base_defense=5,
+            item_attack_bonuses={
+                "Silver Knife": 4,
+                "Crystal Orb": 3,
+                "Cursed Amulet": 2,
+                "Golden Ring": 1,
+            },
+            item_defense_bonuses={
+                "Lantern of Shadows": 3,
+                "Key": 1,
+            },
+        )
+
     def initialize(self) -> str:
         """Initialize systems and return startup message."""
         try:
             self.repository.connect()
             self.rooms = self.repository.load_or_seed_rooms(self.rooms)
+            enemy_doc = self.repository.load_or_seed_enemy(
+                {
+                    "name": self.enemy_profile.name,
+                    "room": self.enemy_profile.room,
+                    "base_hp": self.enemy_profile.base_hp,
+                    "base_attack": self.enemy_profile.base_attack,
+                    "base_defense": self.enemy_profile.base_defense,
+                    "item_attack_bonuses": self.enemy_profile.item_attack_bonuses,
+                    "item_defense_bonuses": self.enemy_profile.item_defense_bonuses,
+                }
+            )
+            self.enemy_profile = self._enemy_profile_from_doc(enemy_doc)
+            self.combat.update_enemy_profile(self.enemy_profile)
             self.world = self._build_world_graph(self.rooms)
             self.room_lookup = {_normalize_text(name): name for name in self.rooms}
             self.item_lookup = self._build_item_lookup(self.rooms)
@@ -200,15 +235,39 @@ class GameEngine:
         self.player.move_to(next_room_name)
         self.turn_counter += 1
         self._schedule_procedural_events(next_room_name)
+        try:
+            self.repository.log_session_event(
+                slot="runtime",
+                event_name="move",
+                details={"direction": direction, "room": next_room_name, "turn_counter": self.turn_counter},
+            )
+        except DatabaseError:
+            pass
 
         combat_result = self.combat.resolve_encounter(self.player)
         if combat_result.outcome == "win":
+            try:
+                self.repository.log_session_event(
+                    slot="runtime",
+                    event_name="combat_win",
+                    details={"room": next_room_name, "turn_counter": self.turn_counter},
+                )
+            except DatabaseError:
+                pass
             self.is_running = False
             return (
                 "Congratulations! You defeated the Phantom of Despair and escaped!\n"
                 f"{combat_result.summary}"
             )
         if combat_result.outcome == "lose":
+            try:
+                self.repository.log_session_event(
+                    slot="runtime",
+                    event_name="combat_lose",
+                    details={"room": next_room_name, "turn_counter": self.turn_counter},
+                )
+            except DatabaseError:
+                pass
             self.is_running = False
             return f"The Phantom of Despair consumed your courage... GAME OVER.\n{combat_result.summary}"
 
@@ -319,6 +378,45 @@ class GameEngine:
             return []
         return [f"[Event] {event.message}" for event in ready]
 
+    @staticmethod
+    def _enemy_profile_from_doc(enemy_doc: Dict[str, object]) -> EnemyProfile:
+        """Normalize a persisted enemy document into a typed profile object."""
+        def _as_int(value: object, default: int) -> int:
+            return value if isinstance(value, int) else default
+
+        def _as_bonus_map(value: object, default: dict[str, int]) -> dict[str, int]:
+            if not isinstance(value, dict):
+                return default
+            result: dict[str, int] = {}
+            for key, raw_value in value.items():
+                if isinstance(key, str) and isinstance(raw_value, int):
+                    result[key] = raw_value
+            return result or default
+
+        return EnemyProfile(
+            name=str(enemy_doc.get("name", "Phantom of Despair")),
+            room=str(enemy_doc.get("room", "Attic")),
+            base_hp=_as_int(enemy_doc.get("base_hp"), 28),
+            base_attack=_as_int(enemy_doc.get("base_attack"), 9),
+            base_defense=_as_int(enemy_doc.get("base_defense"), 5),
+            item_attack_bonuses=_as_bonus_map(
+                enemy_doc.get("item_attack_bonuses"),
+                {
+                    "Silver Knife": 4,
+                    "Crystal Orb": 3,
+                    "Cursed Amulet": 2,
+                    "Golden Ring": 1,
+                },
+            ),
+            item_defense_bonuses=_as_bonus_map(
+                enemy_doc.get("item_defense_bonuses"),
+                {
+                    "Lantern of Shadows": 3,
+                    "Key": 1,
+                },
+            ),
+        )
+
     def _handle_get_item(self, item_name: str) -> str:
         room = self.rooms[self.player.current_room]
         if room.item is None:
@@ -331,11 +429,24 @@ class GameEngine:
         self.player.inventory.add(room.item)
         self.item_lookup.pop(_normalize_text(room.item), None)
         room.item = None
+        try:
+            self.repository.log_session_event(
+                slot="runtime",
+                event_name="pickup",
+                details={"item": requested_item, "room": self.player.current_room, "turn_counter": self.turn_counter},
+            )
+        except DatabaseError:
+            pass
         return f"{requested_item} retrieved."
 
     def _handle_save(self, slot: str) -> str:
         try:
             self.repository.save_game(slot, self.player, turn_counter=self.turn_counter)
+            self.repository.log_session_event(
+                slot=slot,
+                event_name="save_command",
+                details={"current_room": self.player.current_room, "turn_counter": self.turn_counter},
+            )
             return f"Game saved to slot '{slot}'."
         except DatabaseError as exc:
             return f"Save failed: {exc}"
@@ -363,6 +474,11 @@ class GameEngine:
         raw_turn_counter = data.get("turn_counter", 0)
         if isinstance(raw_turn_counter, int):
             self.turn_counter = max(0, raw_turn_counter)
+        self.repository.log_session_event(
+            slot=slot,
+            event_name="load_command",
+            details={"current_room": self.player.current_room, "turn_counter": self.turn_counter},
+        )
         return f"Game loaded from slot '{slot}'."
 
     def _handle_list_saves(self) -> str:
@@ -383,6 +499,15 @@ class GameEngine:
 
     def shutdown(self) -> None:
         """Cleanly close external resources."""
+        if self.repository is not None:
+            try:
+                self.repository.log_session_event(
+                    slot="runtime",
+                    event_name="shutdown",
+                    details={"current_room": self.player.current_room, "turn_counter": self.turn_counter},
+                )
+            except DatabaseError:
+                pass
         self.repository.close()
 
     def loop_delay(self) -> None:
@@ -391,12 +516,21 @@ class GameEngine:
 
     def reset(self) -> None:
         """Reset in-memory game state for a fresh run."""
+        try:
+            self.repository.log_session_event(
+                slot="runtime",
+                event_name="reset",
+                details={"current_room": self.player.current_room, "turn_counter": self.turn_counter},
+            )
+        except DatabaseError:
+            pass
         self.rooms = self._build_rooms()
         self.world = self._build_world_graph(self.rooms)
         self.room_lookup = {_normalize_text(name): name for name in self.rooms}
         self.item_lookup = self._build_item_lookup(self.rooms)
         self.player = Player(current_room="Garden", inventory=Inventory())
-        self.combat = CombatSystem(villain_room="Attic", required_item_count=self.required_items)
+        self.enemy_profile = self._build_default_enemy_profile()
+        self.combat = CombatSystem(required_item_count=self.required_items, enemy_profile=self.enemy_profile)
         self.event_queue = EventQueue()
         self.turn_counter = 0
         self.is_running = True
