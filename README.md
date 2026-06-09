@@ -79,6 +79,25 @@ Current suite covers:
 - event-priority queue behavior
 - game command parsing and alias handling
 
+### MongoDB Integration Tests
+
+One test module requires a live MongoDB instance and is marked as `integration`.
+
+Run only unit tests locally:
+
+```bash
+pytest -m "not integration"
+```
+
+Run integration tests locally with MongoDB available:
+
+```bash
+set MONGODB_URI=mongodb://localhost:27017
+pytest -m integration
+```
+
+The GitHub Actions workflow starts a MongoDB service container automatically, so the full suite runs there.
+
 ## Continuous Integration (CI)
 
 GitHub Actions workflow: `.github/workflows/ci.yml`
