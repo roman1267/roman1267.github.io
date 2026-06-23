@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import importlib
 import logging
+from datetime import datetime
 from typing import Any, Dict, cast
 
+from game.database import DatabaseError
 from game.game_engine import GameEngine
 
 
@@ -25,6 +27,22 @@ def create_app(engine: GameEngine) -> Any:
     flask_class = getattr(flask_module, "Flask")
     request = getattr(flask_module, "request")
     app: Any = flask_class(__name__, static_folder="web", static_url_path="/web")
+
+    def _parse_limit(raw_limit: Any, default: int, max_limit: int) -> int:
+        try:
+            parsed = int(raw_limit)
+        except (TypeError, ValueError):
+            return default
+        return max(1, min(parsed, max_limit))
+
+    def _to_json_compatible(value: Any) -> Any:
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if isinstance(value, list):
+            return [_to_json_compatible(item) for item in value]
+        if isinstance(value, dict):
+            return {str(key): _to_json_compatible(item) for key, item in value.items()}
+        return value
 
     @app.get("/")
     def index() -> Any:
@@ -83,5 +101,57 @@ def create_app(engine: GameEngine) -> Any:
         logger.info("POST /reset")
         engine.reset()
         return {"message": "New game started."}, 200
+
+    @app.get("/admin/rooms")
+    def admin_rooms() -> tuple[Dict[str, Any], int]:
+        logger.debug("GET /admin/rooms")
+        try:
+            rooms = engine.repository.list_room_configs()
+        except DatabaseError as exc:
+            logger.warning("GET /admin/rooms failed: %s", exc)
+            return {"error": str(exc)}, 503
+        return {"rooms": _to_json_compatible(rooms), "count": len(rooms)}, 200
+
+    @app.get("/admin/enemies")
+    def admin_enemies() -> tuple[Dict[str, Any], int]:
+        logger.debug("GET /admin/enemies")
+        try:
+            enemies = engine.repository.list_enemy_configs()
+        except DatabaseError as exc:
+            logger.warning("GET /admin/enemies failed: %s", exc)
+            return {"error": str(exc)}, 503
+        return {"enemies": _to_json_compatible(enemies), "count": len(enemies)}, 200
+
+    @app.get("/admin/sessions")
+    def admin_sessions() -> tuple[Dict[str, Any], int]:
+        slot = str(request.args.get("slot", "")).strip() or None
+        event_name = str(request.args.get("event_name", "")).strip() or None
+        limit = _parse_limit(request.args.get("limit"), default=100, max_limit=500)
+        logger.debug("GET /admin/sessions slot=%s event_name=%s limit=%s", slot, event_name, limit)
+        try:
+            sessions = engine.repository.list_session_events(slot=slot, event_name=event_name, limit=limit)
+        except DatabaseError as exc:
+            logger.warning("GET /admin/sessions failed: %s", exc)
+            return {"error": str(exc)}, 503
+        return {"sessions": _to_json_compatible(sessions), "count": len(sessions)}, 200
+
+    @app.get("/admin/replay/<slot>")
+    def admin_replay(slot: str) -> tuple[Dict[str, Any], int]:
+        cleaned_slot = slot.strip()
+        if not cleaned_slot:
+            return {"error": "slot is required"}, 400
+
+        limit = _parse_limit(request.args.get("limit"), default=200, max_limit=1000)
+        logger.debug("GET /admin/replay/%s limit=%s", cleaned_slot, limit)
+        try:
+            timeline = engine.repository.replay_actions(cleaned_slot, limit=limit)
+        except DatabaseError as exc:
+            logger.warning("GET /admin/replay/%s failed: %s", cleaned_slot, exc)
+            return {"error": str(exc)}, 503
+        return {
+            "slot": cleaned_slot,
+            "timeline": _to_json_compatible(timeline),
+            "count": len(timeline),
+        }, 200
 
     return app

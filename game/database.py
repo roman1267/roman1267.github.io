@@ -388,6 +388,68 @@ class MongoGameRepository:
             if isinstance(save_doc, dict)
         ]
 
+    def list_room_configs(self) -> list[Dict[str, Any]]:
+        """Return room configuration documents for admin inspection."""
+        if self._rooms is None:
+            raise DatabaseError("Database is not connected.")
+
+        room_docs = list(self._rooms.find({}, {"_id": 0}).sort("name", 1))
+        return [
+            self._validate_document(cast(Dict[str, Any], doc), ROOM_DOCUMENT_SCHEMA, "room")
+            for doc in room_docs
+            if isinstance(doc, dict)
+        ]
+
+    def list_enemy_configs(self) -> list[Dict[str, Any]]:
+        """Return enemy configuration documents for admin inspection."""
+        if self._enemies is None:
+            raise DatabaseError("Database is not connected.")
+
+        enemy_docs = list(self._enemies.find({}, {"_id": 0}).sort("name", 1))
+        return [
+            self._validate_document(cast(Dict[str, Any], doc), ENEMY_DOCUMENT_SCHEMA, "enemy")
+            for doc in enemy_docs
+            if isinstance(doc, dict)
+        ]
+
+    def list_session_events(
+        self,
+        slot: Optional[str] = None,
+        event_name: Optional[str] = None,
+        limit: int = 100,
+        sort_ascending: bool = False,
+    ) -> list[Dict[str, Any]]:
+        """Return persisted session events with optional filters for analytics."""
+        if self._sessions is None:
+            raise DatabaseError("Database is not connected.")
+
+        cleaned_limit = max(1, min(limit, 500))
+        query: Dict[str, Any] = {}
+        if slot is not None and slot.strip():
+            query["slot"] = slot.strip()
+        if event_name is not None and event_name.strip():
+            query["event_name"] = event_name.strip()
+
+        sort_direction = 1 if sort_ascending else -1
+        session_docs = list(
+            self._sessions.find(query, {"_id": 0})
+            .sort("updated_at", sort_direction)
+            .limit(cleaned_limit)
+        )
+        return [
+            self._validate_document(cast(Dict[str, Any], doc), SESSION_EVENT_DOCUMENT_SCHEMA, "session_event")
+            for doc in session_docs
+            if isinstance(doc, dict)
+        ]
+
+    def replay_actions(self, slot: str, limit: int = 200) -> list[Dict[str, Any]]:
+        """Return a chronological event timeline for a specific save slot."""
+        cleaned_slot = slot.strip()
+        if not cleaned_slot:
+            raise DatabaseError("Replay requires a non-empty slot value.")
+
+        return self.list_session_events(slot=cleaned_slot, limit=limit, sort_ascending=True)
+
     def log_session_event(self, slot: str, event_name: str, details: Optional[Dict[str, Any]] = None) -> None:
         """Store lightweight session events for analytics and future multiplayer features."""
         if self._sessions is None:

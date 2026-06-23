@@ -228,6 +228,10 @@ http://localhost:8000/
 - `POST /save/<slot>` - save to slot
 - `GET /saves` - list save slots
 - `POST /reset` - reset in-memory game state for a fresh run
+- `GET /admin/rooms` - inspect persisted room configuration documents
+- `GET /admin/enemies` - inspect persisted enemy configuration documents
+- `GET /admin/sessions?slot=<slot>&event_name=<name>&limit=<n>` - query recent session events for analytics/debugging
+- `GET /admin/replay/<slot>?limit=<n>` - fetch chronological event timeline for replay/testing
 
 ## Browser UI
 
