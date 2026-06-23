@@ -1,42 +1,68 @@
-# CS-499 - Category One: Software Design and Engineering
+# Haunted Mansion Escape
 
-This repository contains an enhanced version of a text-based adventure game originally built for IT-140. The project was refactored from a monolithic script into a modular, object-oriented architecture with MongoDB persistence, a lightweight API layer, and Docker support.
+A fully-featured text-based adventure game with modular architecture, MongoDB persistence, web API, and Windows installer distribution. Built for CS-499 Capstone.
 
-## Enhancement Summary
+**Original Project:** IT-140 Text-Based Adventure Game  
+**Enhanced for:** CS-499 Software Design & Engineering + Algorithms/Databases
 
-- Refactored procedural logic into classes and domain modules
-- Introduced a centralized game engine
-- Added improved command parsing, validation, and error handling
-- Implemented configurable room and item management
-- Added MongoDB-backed save/load functionality
-- Added optional API mode for online interaction
-- Added Docker and Docker Compose for containerized execution
+## Quick Start
 
-## Category Two: Algorithms and Data Structures
+### For Windows Users (No Python Required)
 
-This artifact now includes algorithm-focused enhancements beyond basic conditional logic:
+Download the installer from [GitHub Releases](https://github.com/yourusername/haunted-mansion/releases):
 
-- Game world represented as a graph using directional room edges
-- Graph traversal with BFS shortest-path routing (`route <room>`)
-- Command dispatch table with alias normalization for efficient parsing
-- Inventory upgraded to dictionary/list hybrid for fast lookup and ordered display
-- Deterministic stat-based combat calculations with item-driven modifiers
-- Priority queue procedural event system for scalable dynamic encounters
-- Scalable room and item lookup maps for future content expansion
+1. Download `HauntedMansionEscape-Setup-*.exe`
+2. Run installer
+3. Launch from Start Menu
+4. (Optional) Run "Start Save Database" for save/load support
 
-## Category Three: Databases
+### For Python Users
 
-This artifact now includes a database-driven persistence architecture in MongoDB:
+```bash
+pip install -r requirements.txt
+python main.py --mode cli
+```
 
-- MongoDB integration with a repository abstraction layer
-- Multi-collection schema for `players`, `inventory`, `rooms`, `game_state`, and `game_sessions`
-- Additional `enemies` collection for enemy profiles and combat configuration
-- Persistent save/load state with turn counter persistence
-- Persistent inventory tracking through dedicated inventory documents
-- Dynamic room loading from MongoDB with fallback seeding from defaults
-- Session event logging for future analytics/multiplayer-oriented extensions
-- TTL-based retention on session events for long-term storage control
-- Docker-based MongoDB runtime support for local development
+For web interface:
+
+```bash
+python main.py --mode api --host 0.0.0.0 --port 8000
+```
+
+Then open [http://localhost:8000](http://localhost:8000)
+
+## Features
+
+### Gameplay
+
+- Navigate an 8-room mansion
+- Collect 6 mystical items to defeat the Phantom of Despair
+- Save/load progress to named slots
+- Procedural event system for atmospheric encounters
+- Combat system with item-based stat modifiers
+
+### Architecture Highlights
+
+**Software Design (Category One)**
+- Refactored monolithic script into modular OOP architecture  
+- Centralized game engine with command dispatch system
+- Separation of concerns: player, room, inventory, combat, persistence
+
+**Algorithms & Data Structures (Category Two)**
+- Game world as directed graph with BFS shortest-path routing
+- Command dispatch table with efficient alias normalization
+- Inventory hybrid dictionary/list for performance
+- Priority queue event system for scalable encounters
+- Optimized lookup maps for O(1) room/item access
+
+**Database Integration (Category Three)**
+- MongoDB with 5+ collections for persistence
+- JSON Schema validation on all write operations
+- Session event logging for analytics and replay
+- TTL-based retention policies for data lifecycle
+- Admin endpoints for game inspection and debugging
+
+
 
 ### Database Schema
 
@@ -105,354 +131,279 @@ erDiagram
 - `game_state.slot` (unique)
 - `game_sessions.timestamp` (TTL: 30 days)
 
-## Project Structure
+## Releases
 
-- `TextBasedGame.py` - legacy launcher that starts the new architecture
-- `main.py` - application entrypoint (`cli` or `api` mode)
-- `game/` - core game package containing orchestration, models, combat, traversal, and persistence
-- `game/game_engine.py` - core orchestration and command processing
-- `game/player.py` - player model
-- `game/room.py` - room model and movement rules
-- `game/inventory.py` - inventory model
-- `game/combat.py` - encounter resolution
-- `game/database.py` - MongoDB persistence layer
-- `api.py` - Flask API endpoints
-- `requirements.txt` - Python dependencies
-- `Dockerfile` / `docker-compose.yml` - container setup
+| Version | Download | Notes |
+|---------|----------|-------|
+| **Latest** | [GitHub Releases](https://github.com/yourusername/haunted-mansion/releases) | Pre-built executable + setup wizard |
+| **Source** | This repository | Full source code, tests, Docker setup |
 
-## Requirements
+## Installation
 
-- Python 3.11+
-- MongoDB (local instance or container)
+### Windows Installer (Recommended)
 
-## Running Tests
+Download from [Releases](https://github.com/yourusername/haunted-mansion/releases) and run the `.exe` installer.
 
-Install development dependencies:
+### From Source
 
 ```bash
-pip install -r requirements-dev.txt
-```
-
-Run the test suite:
-
-```bash
-pytest
-```
-
-Current suite covers:
-
-- world graph traversal and movement checks
-- inventory dictionary/list behavior
-- combat stat calculation outcomes
-- event-priority queue behavior
-- game command parsing and alias handling
-
-### MongoDB Integration Tests
-
-One test module requires a live MongoDB instance and is marked as `integration`.
-
-Run only unit tests locally:
-
-```bash
-pytest -m "not integration"
-```
-
-Run integration tests locally with MongoDB available:
-
-```bash
-set MONGODB_URI=mongodb://localhost:27017
-pytest -m integration
-```
-
-The GitHub Actions workflow starts a MongoDB service container automatically, so the full suite runs there.
-
-## Continuous Integration (CI)
-
-GitHub Actions workflow: `.github/workflows/ci.yml`
-
-CI runs automatically on:
-
-- push to `main` or `master`
-- pull requests targeting `main` or `master`
-- manual runs via `workflow_dispatch`
-
-CI job behavior:
-
-- tests on Python `3.11` and `3.12`
-- installs dependencies from `requirements-dev.txt`
-- runs `pytest -q`
-
-## Local Run (CLI)
-
-1. Install dependencies:
-
-```bash
+git clone https://github.com/yourusername/haunted-mansion
+cd haunted-mansion
 pip install -r requirements.txt
-```
-
-2. Set MongoDB URI (optional if using local default):
-
-```bash
-set MONGODB_URI=mongodb://localhost:27017
-```
-
-3. Run game:
-
-```bash
 python main.py --mode cli
 ```
 
-You can also continue using:
-
-```bash
-python TextBasedGame.py
-```
-
-## API Run
-
-```bash
-python main.py --mode api --host 0.0.0.0 --port 8000
-```
-
-Then open the browser UI at:
-
-```text
-http://localhost:8000/
-```
-
-### API Endpoints
-
-- `GET /health` - service health
-- `GET /state` - current game state
-- `POST /command` - execute command, JSON body: `{ "command": "go East" }`
-- `POST /save/<slot>` - save to slot
-- `GET /saves` - list save slots
-- `POST /reset` - reset in-memory game state for a fresh run
-- `GET /admin/rooms` - inspect persisted room configuration documents
-- `GET /admin/enemies` - inspect persisted enemy configuration documents
-- `GET /admin/sessions?slot=<slot>&event_name=<name>&limit=<n>` - query recent session events for analytics/debugging
-- `GET /admin/replay/<slot>?limit=<n>` - fetch chronological event timeline for replay/testing
-
-## Browser UI
-
-The web interface is served by Flask from `web/` and supports:
-
-- movement buttons generated from current exits
-- room item pickup with one click
-- command console for advanced commands
-- shortest-path routing (`route <room>`)
-- save/load slot actions
-- event log and live state refresh
-
-Launch command:
-
-```bash
-python main.py --mode api --host 0.0.0.0 --port 8000
-```
-
-Open:
-
-```text
-http://localhost:8000/
-```
-
-## Docker Run
-
-Run game and MongoDB together:
+### Docker
 
 ```bash
 docker compose up --build
 ```
 
-This starts:
+## Project Structure
 
-- `mongodb` on port `27017`
-- `game` container in CLI mode
+```
+.
+├── game/                  # Core game engine
+│   ├── game_engine.py
+│   ├── player.py
+│   ├── room.py
+│   ├── inventory.py
+│   ├── combat.py
+│   ├── database.py
+│   ├── event_system.py
+│   └── world_graph.py
+├── api.py                 # Flask endpoints
+├── main.py               # Entry point
+├── tests/                # Pytest suite
+├── scripts/              # Build and test scripts
+├── installer/            # Windows installer files
+├── docker-compose.yml    # Docker setup
+└── requirements.txt
+```
 
-### Docker Run (API Production Profile)
+## Commands
 
-Build and run API + MongoDB with health checks:
+```
+go <North|South|East|West>   Move between rooms
+get <item name>              Pick up an item
+inventory                    Check your items
+route <room name>            Find shortest path to a room
+look                         Describe the current room
+save [slot]                  Save your progress
+load [slot]                  Restore a saved game
+saves                        List all save slots
+help                         Show available commands
+quit                         Exit the game
+```
+
+## Testing
+
+Unit tests (no database required):
+
+```bash
+pip install -r requirements-dev.txt
+pytest -m "not integration"
+```
+
+Full test suite (requires MongoDB):
+
+```bash
+set MONGODB_URI=mongodb://localhost:27017
+pytest
+```
+
+CI runs automatically on pushes and pull requests for Python 3.11+.
+
+## Running the Game
+
+### CLI Mode
+
+```bash
+python main.py --mode cli
+```
+
+Or use the legacy launcher:
+
+```bash
+python TextBasedGame.py
+```
+
+### API Mode with Web UI
+
+```bash
+python main.py --mode api --host 0.0.0.0 --port 8000
+```
+
+Open [http://localhost:8000](http://localhost:8000) in your browser.
+
+## API Endpoints
+
+**Gameplay:**
+- `GET /health` - service health
+- `GET /state` - current game state
+- `POST /command` - execute command: `{ "command": "go East" }`
+- `POST /save/<slot>` - save game to slot
+- `GET /saves` - list all save slots
+- `POST /reset` - start new game
+
+**Admin & Debugging:**
+- `GET /admin/rooms` - inspect room configurations
+- `GET /admin/enemies` - inspect enemy configurations
+- `GET /admin/sessions` - query session event log
+- `GET /admin/replay/<slot>` - replay game timeline for analysis
+
+**Web UI Features:**
+- Movement buttons from room exits
+- One-click item pickup
+- Command console
+- Shortest-path routing
+- Save/load interface
+- Real-time state refresh
+
+## Save Data & Persistence
+
+**Offline Play (No MongoDB):**
+The game runs standalone without MongoDB. Save/load commands inform the user but don't persist data.
+
+**With Save/Load Support:**
+MongoDB must be running on `localhost:27017` or configured via `MONGODB_URI`:
+
+```bash
+# Local MongoDB service
+mongod --dbpath /data/db
+
+# Or Docker container
+docker run -d --name haunted-mansion-mongo -p 27017:27017 mongo:7
+
+# Or set connection string
+set MONGODB_URI=mongodb://your-atlas-cluster/your-database
+python main.py --mode cli
+```
+
+**Windows Installer Save Support:**
+Run the "Start Save Database" shortcut from Start Menu. It auto-installs Docker Desktop (if needed) and starts MongoDB.
+
+## Database Schema
+
+**Collections:**
+- `players` - player state (slot, room, updated_at)
+- `inventory` - saved items per slot
+- `rooms` - world configuration (name, exits, items)
+- `enemies` - boss configuration (HP, attack, defense, item bonuses)
+- `game_state` - game progress (slot, turn counter)
+- `game_sessions` - event log (slot, event type, timestamp) with 30-day TTL
+
+**Validation:**
+JSON Schema validation ensures data integrity on all writes. Invalid documents are rejected with detailed error messages.
+
+**Indexes:**
+- `players.slot` (unique)
+- `inventory.slot` (unique)
+- `rooms.name` (unique)
+- `enemies.name` (unique)
+- `game_state.slot` (unique)
+- `game_sessions.updated_at` (TTL: 30 days)
+
+## Environment Variables
+
+```bash
+MONGODB_URI=mongodb://localhost:27017    # MongoDB connection
+LOG_LEVEL=INFO                           # Logging level
+HOST=0.0.0.0                            # API host binding
+PORT=8000                                # API port
+```
+
+See `.env.example` for defaults.
+
+## Deployment
+
+### Local Docker
+
+```bash
+docker compose up --build
+```
+
+CLI mode with MongoDB container.
+
+### API Mode with Health Checks
 
 ```bash
 docker compose -f docker-compose.api.yml up --build
 ```
 
-This starts:
+Starts game-api on port 8000 and MongoDB on port 27017.
 
-- `game-api` on port `8000`
-- `mongodb` on port `27017`
-- health checks for both services
+### Cloud Deployment
 
-## Environment Variables
+See `render.yaml` for Render deployment config using `Dockerfile.api`.
 
-Use `.env.example` as a template:
+For production:
+1. Use managed MongoDB (MongoDB Atlas, etc.)
+2. Set `MONGODB_URI` environment variable
+3. Deploy container with health checks enabled
 
-- `MONGODB_URI` - MongoDB connection string
-- `HOST` - host binding in non-container API mode
-- `PORT` - API port
-- `LOG_LEVEL` - logging level (`DEBUG`, `INFO`, `WARNING`, etc.)
+## Building Releases
 
-Example:
-
-```bash
-set MONGODB_URI=mongodb://localhost:27017
-set LOG_LEVEL=INFO
-python main.py --mode api --host 0.0.0.0 --port 8000
-```
-
-## Deployment Config
-
-`render.yaml` is included for Render deployment using `Dockerfile.api`.
-
-## Offline Distribution (.exe)
-
-Build a Windows executable with PyInstaller:
+### Windows Executable
 
 ```bash
 build-exe.bat
+# Output: dist/HauntedMansionEscape.exe
 ```
 
-or:
-
-```bash
-powershell -ExecutionPolicy Bypass -File scripts/build-exe.ps1
-```
-
-Output file:
-
-- `dist/HauntedMansionEscape.exe`
-
-Run an automated executable smoke test:
+Smoke test:
 
 ```bash
 test-exe.bat
+# Output: artifacts/exe-smoke.log
 ```
 
-or:
+### Windows Installer
 
-```bash
-powershell -ExecutionPolicy Bypass -File scripts/test-exe-smoke.ps1 -ExePath dist/HauntedMansionEscape.exe -SaveLog
-```
-
-Smoke test checks:
-
-- executable launches
-- `help` command executes
-- game exits cleanly with `quit`
-- output is written to `artifacts/exe-smoke.log`
-
-## Windows Installer (.exe Setup Wizard)
-
-Create a standard Windows installer (Start Menu/Desktop shortcuts included):
+Requires Inno Setup 6:
 
 ```bash
 build-installer.bat
+# Output: installer/dist/HauntedMansionEscape-Setup-*.exe
 ```
 
-or:
+**Installer Features:**
+- Install to Program Files
+- Start Menu shortcuts
+- MongoDB/Docker management helpers
+- Post-install setup wizard
+- Optional desktop shortcut
 
-```bash
-powershell -ExecutionPolicy Bypass -File scripts/build-installer.ps1 -Version 1.0.0 -ExeName HauntedMansionEscape.exe
-```
+### Clean Machine Testing
 
-Installer output:
+On a machine **without Python installed**:
 
-- `installer/dist/HauntedMansionEscape-Setup-<version>.exe`
+1. Run the installer or exe
+2. Test commands: `help`, `go East`, `quit`
+3. Verify no missing DLL or runtime errors
 
-Installer behavior:
+## Course Outcomes
 
-- installs game under `Program Files/Haunted Mansion Escape`
-- adds Start Menu shortcut for the game
-- optional desktop shortcut
-- includes helper shortcuts to start/stop MongoDB via Docker for save/load support
-- `Start Save Database` requests admin rights and attempts Docker Desktop install via `winget` if Docker is missing
-- setup wizard post-install page includes optional actions (enable save/load support, launch game)
+This project demonstrates:
 
-Prerequisites for building installer:
+- **Software Design**: Modular OOP architecture with clear separation of concerns
+- **Algorithms**: Graph traversal (BFS), priority queues, dispatch tables, efficient lookups
+- **Database Design**: Multi-collection MongoDB schema with validation and indexing
+- **API Development**: RESTful endpoints with error handling and status codes
+- **DevOps**: Docker, compose, health checks, CI/CD pipelines
+- **Testing**: Unit tests, integration tests, smoke tests
+- **Distribution**: Executable packaging, installer, release management
 
-- Inno Setup 6 (compiler `ISCC.exe`)
-- built game executable in `dist/HauntedMansionEscape.exe`
+## License
 
-### Clean Machine Validation (No Python Installed)
+Educational project for CS-499 Capstone.
 
-To verify true offline distribution, run the packaged `.exe` on a clean Windows environment:
+## Support
 
-1. Use a fresh Windows VM or Windows Sandbox image.
-2. Ensure Python is not installed.
-3. Copy only the release files (at minimum `dist/HauntedMansionEscape.exe`).
-4. Run the executable and test this flow:
-    - launch
-    - `help`
-    - `go East`
-    - `quit`
-5. Confirm the app exits with no missing-DLL/runtime errors.
-6. Record evidence (screenshot + command transcript) for your ePortfolio.
+For issues, refer to the sections above or open an issue on GitHub.
 
-Installer-based validation option:
+---
 
-1. Copy `installer/dist/HauntedMansionEscape-Setup-<version>.exe` to the clean machine.
-2. Run installer and complete setup wizard.
-3. Launch game from Start Menu shortcut.
-4. Run `help` then `quit` to verify clean launch/exit.
-
-### Save Data and Offline MongoDB Options
-
-- Save/load relies on MongoDB via `MONGODB_URI`.
-- If MongoDB is unavailable, gameplay still works but save/load is disabled.
-- For offline save support on Windows, run a local MongoDB instance or use Docker Desktop with:
-
-```bash
-docker run -d --name haunted-mansion-mongo -p 27017:27017 --restart unless-stopped mongo:7
-```
-
-## Release Packaging Notes
-
-For sharing the `.exe`:
-
-- Include `HauntedMansionEscape.exe` from `dist/`.
-- Include a short `README` section with required options:
-	- no-save mode (works without MongoDB)
-	- save-enabled mode (requires local MongoDB or Docker)
-- If using Docker-based save support, provide this startup command:
-
-```bash
-docker run -d --name haunted-mansion-mongo -p 27017:27017 --restart unless-stopped mongo:7
-```
-
-## Core Commands In Game
-
-- `go <North|South|East|West>`
-- `get <item name>`
-- `inventory`
-- `route <room name>`
-- `look`
-- `save [slot]`
-- `load [slot]`
-- `saves`
-- `help`
-- `quit`
-
-## Course Outcome Alignment
-
-This enhancement demonstrates:
-
-- object-oriented software design
-- modular software engineering
-- maintainability and separation of concerns
-- persistence integration with MongoDB
-- API integration fundamentals
-- containerized deployment with Docker
-
-## Deployment TODOs
-
-- [ ] Network deployment (hosted access)
-- [x] Build a production Docker image for API mode
-- [ ] Move MongoDB to a managed/hosted instance and configure `MONGODB_URI`
-- [x] Add deployment configuration for a target platform (for example: Render, Fly.io, or Azure)
-- [x] Add health checks, environment variable docs, and basic production logging
-
-- [ ] Offline distribution (Windows `.exe`)
-- [x] Add a PyInstaller build script for CLI mode
-- [ ] Verify the executable runs without a local Python install (complete on clean VM/Sandbox)
-- [x] Document save-data path and offline MongoDB requirement/options
-- [x] Add release packaging notes for sharing the `.exe`
+**Built with:** Python, MongoDB, Flask, PyInstaller, Inno Setup, Docker  
+**Latest Release:** [GitHub Releases](https://github.com/yourusername/haunted-mansion/releases)  
+**Repository:** [github.com/yourusername/haunted-mansion](https://github.com/yourusername/haunted-mansion)
