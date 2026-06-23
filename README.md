@@ -38,6 +38,73 @@ This artifact now includes a database-driven persistence architecture in MongoDB
 - TTL-based retention on session events for long-term storage control
 - Docker-based MongoDB runtime support for local development
 
+### Database Schema
+
+```mermaid
+---
+title: MongoDB Collections Schema
+---
+erDiagram
+    PLAYER ||--|| INVENTORY : references_slot
+    PLAYER ||--|| GAME-STATE : references_slot
+    PLAYER ||--o{ GAME-SESSION : references_slot
+    ROOM ||--o{ ENEMY : located_in
+    
+    PLAYER {
+        ObjectId _id PK
+        string slot UK
+        string current_room FK
+        string character_name
+        int level
+    }
+    
+    INVENTORY {
+        ObjectId _id PK
+        string slot UK
+        array items
+    }
+    
+    ROOM {
+        ObjectId _id PK
+        string name UK
+        object exits
+        string item "nullable"
+    }
+    
+    ENEMY {
+        ObjectId _id PK
+        string name UK
+        string room FK
+        int base_hp
+        int base_attack
+        int base_defense
+        object item_bonuses
+    }
+    
+    GAME-STATE {
+        ObjectId _id PK
+        string slot UK
+        int turn_counter
+    }
+    
+    GAME-SESSION {
+        ObjectId _id PK
+        string slot FK
+        string event_type
+        date timestamp
+        object details
+        date TTL "expires after 30 days"
+    }
+```
+
+**Indexes:**
+- `players.slot` (unique)
+- `inventory.slot` (unique)
+- `rooms.name` (unique)
+- `enemies.name` (unique)
+- `game_state.slot` (unique)
+- `game_sessions.timestamp` (TTL: 30 days)
+
 ## Project Structure
 
 - `TextBasedGame.py` - legacy launcher that starts the new architecture
