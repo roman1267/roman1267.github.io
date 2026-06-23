@@ -1,5 +1,9 @@
-from game.database import MongoGameRepository
+import pytest
+
+from game.database import DatabaseError, MongoGameRepository
 from game.game_engine import GameEngine
+from game.inventory import Inventory
+from game.player import Player
 from game.room import Room
 
 
@@ -116,3 +120,28 @@ def test_enemy_profile_can_be_loaded_from_persisted_doc() -> None:
     assert profile.base_hp == 40
     assert profile.item_attack_bonuses["Crystal Orb"] == 5
     assert profile.item_defense_bonuses["Lantern of Shadows"] == 4
+
+
+def test_save_game_rejects_invalid_slot_before_persistence() -> None:
+    repository = MongoGameRepository()
+
+    class FakePlayersCollection:
+        def update_one(self, *_args, **_kwargs):
+            raise AssertionError("update_one should not run for invalid payloads")
+
+    class FakeInventoryCollection:
+        def update_one(self, *_args, **_kwargs):
+            raise AssertionError("update_one should not run for invalid payloads")
+
+    class FakeStateCollection:
+        def update_one(self, *_args, **_kwargs):
+            raise AssertionError("update_one should not run for invalid payloads")
+
+    repository._players = FakePlayersCollection()
+    repository._inventory = FakeInventoryCollection()
+    repository._game_state = FakeStateCollection()
+
+    player = Player(current_room="Garden", inventory=Inventory())
+
+    with pytest.raises(DatabaseError, match="Invalid player document"):
+        repository.save_game("   ", player)
