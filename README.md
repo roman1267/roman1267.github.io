@@ -400,7 +400,7 @@ Installer-based validation option:
 - For offline save support on Windows, run a local MongoDB instance or use Docker Desktop with:
 
 ```bash
-docker compose up -d mongodb
+docker run -d --name haunted-mansion-mongo -p 27017:27017 --restart unless-stopped mongo:7
 ```
 
 ## Release Packaging Notes
@@ -414,7 +414,7 @@ For sharing the `.exe`:
 - If using Docker-based save support, provide this startup command:
 
 ```bash
-docker compose up -d mongodb
+docker run -d --name haunted-mansion-mongo -p 27017:27017 --restart unless-stopped mongo:7
 ```
 
 ## Core Commands In Game

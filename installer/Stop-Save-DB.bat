@@ -10,7 +10,16 @@ if errorlevel 1 (
     exit /b 1
 )
 
-docker compose stop mongodb
+set "CONTAINER_NAME=haunted-mansion-mongo"
+
+docker ps -a --format "{{.Names}}" | findstr /I /X "%CONTAINER_NAME%" >nul
+if errorlevel 1 (
+    echo MongoDB container "%CONTAINER_NAME%" was not found.
+    pause
+    exit /b 0
+)
+
+docker stop %CONTAINER_NAME% >nul
 if errorlevel 1 (
     echo Could not stop MongoDB container.
     echo Make sure Docker Desktop is running.
@@ -18,5 +27,5 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo MongoDB container stopped.
+echo MongoDB container "%CONTAINER_NAME%" stopped.
 pause
