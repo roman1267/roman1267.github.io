@@ -365,6 +365,7 @@ Installer behavior:
 - adds Start Menu shortcut for the game
 - optional desktop shortcut
 - includes helper shortcuts to start/stop MongoDB via Docker for save/load support
+- `Start Save Database` requests admin rights and attempts Docker Desktop install via `winget` if Docker is missing
 
 Prerequisites for building installer:
 
