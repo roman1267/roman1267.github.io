@@ -1,5 +1,5 @@
 ﻿Welcome to Haunted Mansion Escape! Collect all items to defeat the Phantom of Despair.
-System status: MongoDB unavailable (PyMongo is not installed. Install dependencies from requirements.txt.). Save/load commands will be disabled.
+System status: MongoDB connected
 Type 'help' for available commands.
 
 ================================================================
