@@ -45,4 +45,5 @@ Name: "{autoprograms}\Haunted Mansion Escape\Offline README"; Filename: "{app}\R
 Name: "{autodesktop}\Haunted Mansion Escape"; Filename: "{app}\HauntedMansionEscape.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\HauntedMansionEscape.exe"; Description: "Launch Haunted Mansion Escape"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\Start-Save-DB.bat"; Description: "Enable save/load support (install/start Docker and MongoDB)"; Flags: postinstall shellexec skipifsilent waituntilterminated unchecked
+Filename: "{app}\HauntedMansionEscape.exe"; Description: "Launch Haunted Mansion Escape"; Flags: nowait postinstall skipifsilent unchecked
