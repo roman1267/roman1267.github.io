@@ -1,0 +1,31 @@
+﻿Welcome to Haunted Mansion Escape! Collect all items to defeat the Phantom of Despair.
+System status: MongoDB unavailable (PyMongo is not installed. Install dependencies from requirements.txt.). Save/load commands will be disabled.
+Type 'help' for available commands.
+
+================================================================
+Location : Garden
+Inventory: Empty
+Exits    : East
+Turn     : 0
+----------------------------------------------------------------
+There are no items in this room.
+================================================================
+
+> Enter command: 
+> Commands: go <direction>, get <item>, inventory, route <room>, look, save [slot], load [slot], saves, help, quit
+
+
+================================================================
+Location : Garden
+Inventory: Empty
+Exits    : East
+Turn     : 0
+----------------------------------------------------------------
+There are no items in this room.
+================================================================
+
+> Enter command: 
+> Exiting game.
+
+
+

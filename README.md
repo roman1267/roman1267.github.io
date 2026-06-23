@@ -322,6 +322,40 @@ Output file:
 
 - `dist/HauntedMansionEscape.exe`
 
+Run an automated executable smoke test:
+
+```bash
+test-exe.bat
+```
+
+or:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/test-exe-smoke.ps1 -ExePath dist/HauntedMansionEscape.exe -SaveLog
+```
+
+Smoke test checks:
+
+- executable launches
+- `help` command executes
+- game exits cleanly with `quit`
+- output is written to `artifacts/exe-smoke.log`
+
+### Clean Machine Validation (No Python Installed)
+
+To verify true offline distribution, run the packaged `.exe` on a clean Windows environment:
+
+1. Use a fresh Windows VM or Windows Sandbox image.
+2. Ensure Python is not installed.
+3. Copy only the release files (at minimum `dist/HauntedMansionEscape.exe`).
+4. Run the executable and test this flow:
+    - launch
+    - `help`
+    - `go East`
+    - `quit`
+5. Confirm the app exits with no missing-DLL/runtime errors.
+6. Record evidence (screenshot + command transcript) for your ePortfolio.
+
 ### Save Data and Offline MongoDB Options
 
 - Save/load relies on MongoDB via `MONGODB_URI`.
@@ -380,6 +414,6 @@ This enhancement demonstrates:
 
 - [ ] Offline distribution (Windows `.exe`)
 - [x] Add a PyInstaller build script for CLI mode
-- [ ] Verify the executable runs without a local Python install
+- [ ] Verify the executable runs without a local Python install (complete on clean VM/Sandbox)
 - [x] Document save-data path and offline MongoDB requirement/options
 - [x] Add release packaging notes for sharing the `.exe`

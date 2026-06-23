@@ -11,7 +11,7 @@ if (-not (Test-Path ".venv/Scripts/python.exe")) {
 
 & .venv/Scripts/python.exe -m pip install --upgrade pip
 & .venv/Scripts/python.exe -m pip install -r requirements.txt
-& .venv/Scripts/python.exe -m pip install pyinstaller==6.10.0
+& .venv/Scripts/python.exe -m pip install pyinstaller==6.21.0
 
 & .venv/Scripts/pyinstaller.exe --clean --noconfirm --onefile --name $Name $EntryPoint
 
