@@ -22,4 +22,5 @@ Haunted Mansion Escape - Offline Installation Notes
    - If save/load fails, ensure Docker Desktop is running.
    - If automatic Docker install fails, install Docker Desktop manually and run Start-Save-DB.bat again.
    - If another service already uses port 27017, stop it and run Start-Save-DB.bat again.
+   - Setup log is written to: %TEMP%\haunted-mongo-setup.log
    - If startup fails, re-run installer and launch from Start Menu.

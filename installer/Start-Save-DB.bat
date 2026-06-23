@@ -2,11 +2,17 @@
 setlocal
 cd /d "%~dp0"
 
+set "LOGFILE=%TEMP%\haunted-mongo-setup.log"
+echo =============================================================== > "%LOGFILE%"
+echo [%date% %time%] Start-Save-DB launched >> "%LOGFILE%"
+
 echo Starting MongoDB for save/load support using Docker...
+echo Logging to: %LOGFILE%
 
 net session >nul 2>nul
 if errorlevel 1 (
     echo Requesting administrator privileges...
+    echo [%date% %time%] Elevation requested >> "%LOGFILE%"
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
     exit /b 0
 )
@@ -14,23 +20,45 @@ if errorlevel 1 (
 where docker >nul 2>nul
 if errorlevel 1 (
     echo Docker CLI not found. Attempting Docker Desktop install via winget...
+    echo [%date% %time%] Docker CLI missing. Trying winget install. >> "%LOGFILE%"
     where winget >nul 2>nul
-    if errorlevel 1 (
-        echo winget is not available on this machine.
-        echo Install Docker Desktop manually from https://www.docker.com/products/docker-desktop/
-        echo Then run this script again.
-        pause
-        exit /b 1
+    if not errorlevel 1 (
+        winget install --id Docker.DockerDesktop -e --accept-source-agreements --accept-package-agreements >> "%LOGFILE%" 2>&1
     )
 
-    winget install --id Docker.DockerDesktop -e --accept-source-agreements --accept-package-agreements
+    where docker >nul 2>nul
     if errorlevel 1 (
-        echo Automatic Docker install failed.
-        echo You can still play in terminal mode without save/load.
-        echo For save/load, install Docker Desktop manually and re-run this script.
-        pause
-        exit /b 1
+        echo winget path failed or is unavailable. Trying direct Docker installer download...
+        echo [%date% %time%] Falling back to direct installer download. >> "%LOGFILE%"
+        set "DOCKER_INSTALLER=%TEMP%\DockerDesktopInstaller.exe"
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://desktop.docker.com/win/main/amd64/Docker%%20Desktop%%20Installer.exe' -OutFile '%DOCKER_INSTALLER%'" >> "%LOGFILE%" 2>&1
+        if errorlevel 1 (
+            echo Could not download Docker Desktop installer.
+            echo Install manually from https://www.docker.com/products/docker-desktop/
+            echo [%date% %time%] Direct installer download failed. >> "%LOGFILE%"
+            pause
+            exit /b 1
+        )
+
+        "%DOCKER_INSTALLER%" install --quiet --accept-license >> "%LOGFILE%" 2>&1
+        if errorlevel 1 (
+            echo Automatic Docker installation failed.
+            echo Install Docker Desktop manually, then run this script again.
+            echo [%date% %time%] Docker installer execution failed. >> "%LOGFILE%"
+            pause
+            exit /b 1
+        )
     )
+)
+
+if exist "%ProgramFiles%\Docker\Docker\resources\bin\docker.exe" (
+    set "PATH=%ProgramFiles%\Docker\Docker\resources\bin;%PATH%"
+)
+if exist "%ProgramFiles(x86)%\Docker\Docker\resources\bin\docker.exe" (
+    set "PATH=%ProgramFiles(x86)%\Docker\Docker\resources\bin;%PATH%"
+)
+if exist "%LocalAppData%\Programs\Docker\Docker\resources\bin\docker.exe" (
+    set "PATH=%LocalAppData%\Programs\Docker\Docker\resources\bin;%PATH%"
 )
 
 echo Ensuring Docker Desktop is running...
@@ -45,7 +73,7 @@ if errorlevel 1 (
     )
 
     set "READY=0"
-    for /L %%I in (1,1,30) do (
+    for /L %%I in (1,1,60) do (
         docker version >nul 2>nul
         if not errorlevel 1 (
             set "READY=1"
@@ -59,6 +87,8 @@ if errorlevel 1 (
         echo Docker Desktop did not become ready in time.
         echo Start Docker Desktop manually, wait until it shows Running, then re-run this script.
         echo You can still play in terminal mode without save/load.
+        echo Setup log: %LOGFILE%
+        echo [%date% %time%] Docker daemon not ready after wait loop. >> "%LOGFILE%"
         pause
         exit /b 1
     )
@@ -80,6 +110,7 @@ if errorlevel 1 (
     if errorlevel 1 (
         echo Could not start existing MongoDB container.
         echo Make sure Docker Desktop is running.
+        echo [%date% %time%] Existing container start failed. >> "%LOGFILE%"
         pause
         exit /b 1
     )
@@ -88,4 +119,5 @@ if errorlevel 1 (
 echo MongoDB container "%CONTAINER_NAME%" is running on localhost:27017.
 echo Save/load is now available in game.
 echo If the game is currently open, restart it to enable save/load commands.
+echo [%date% %time%] Success. MongoDB container running. >> "%LOGFILE%"
 pause
