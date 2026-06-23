@@ -341,6 +341,36 @@ Smoke test checks:
 - game exits cleanly with `quit`
 - output is written to `artifacts/exe-smoke.log`
 
+## Windows Installer (.exe Setup Wizard)
+
+Create a standard Windows installer (Start Menu/Desktop shortcuts included):
+
+```bash
+build-installer.bat
+```
+
+or:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/build-installer.ps1 -Version 1.0.0 -ExeName HauntedMansionEscape.exe
+```
+
+Installer output:
+
+- `installer/dist/HauntedMansionEscape-Setup-<version>.exe`
+
+Installer behavior:
+
+- installs game under `Program Files/Haunted Mansion Escape`
+- adds Start Menu shortcut for the game
+- optional desktop shortcut
+- includes helper shortcuts to start/stop MongoDB via Docker for save/load support
+
+Prerequisites for building installer:
+
+- Inno Setup 6 (compiler `ISCC.exe`)
+- built game executable in `dist/HauntedMansionEscape.exe`
+
 ### Clean Machine Validation (No Python Installed)
 
 To verify true offline distribution, run the packaged `.exe` on a clean Windows environment:
@@ -355,6 +385,13 @@ To verify true offline distribution, run the packaged `.exe` on a clean Windows 
     - `quit`
 5. Confirm the app exits with no missing-DLL/runtime errors.
 6. Record evidence (screenshot + command transcript) for your ePortfolio.
+
+Installer-based validation option:
+
+1. Copy `installer/dist/HauntedMansionEscape-Setup-<version>.exe` to the clean machine.
+2. Run installer and complete setup wizard.
+3. Launch game from Start Menu shortcut.
+4. Run `help` then `quit` to verify clean launch/exit.
 
 ### Save Data and Offline MongoDB Options
 
