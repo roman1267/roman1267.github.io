@@ -1,3 +1,89 @@
+# Professional ePortfolio - CS-499 Capstone
+
+## Professional Self-Assessment
+
+### Introduction & Program Reflection
+
+Throughout my Computer Science degree, I have developed a strong foundation in software engineering, database design, and full-stack development. This capstone project—the Haunted Mansion Escape game—represents the culmination of my technical education and demonstrates my ability to transform legacy code into a production-ready system with enterprise-quality architecture. The journey from a monolithic procedural script to a modular, scalable application with MongoDB persistence, RESTful APIs, and Windows distribution has reinforced core CS competencies and prepared me to build data-driven tools that solve real business problems.
+
+This portfolio showcases not only technical proficiency but also my problem-solving approach, persistence through challenging constraints (Python 3.14 wheel unavailability, Windows installer sequencing, PyInstaller module bundling), and commitment to delivering polished, end-user-ready solutions.
+
+### Core Competencies Demonstrated
+
+#### **1. Data Structures & Algorithms**
+
+This capstone implements sophisticated algorithmic solutions beyond basic logic:
+
+- **Graph-based world modeling:** The game world is represented as a directed graph, enabling efficient pathfinding using breadth-first search (BFS) to calculate shortest routes between rooms. This demonstrates understanding of graph traversal, complexity analysis, and practical algorithm selection.
+- **Priority queue event system:** Game events are processed using a priority queue for scalability and dynamic encounter generation, showing knowledge of heap data structures and event scheduling.
+- **Optimized lookup structures:** Room and item lookups use hash maps (dictionaries) for O(1) access, reflecting conscious performance optimization in data structure design.
+- **Command dispatch table:** Efficient command parsing using dispatch tables with alias normalization reduces conditional branching and improves maintainability.
+
+*Outside this capstone:* In **CS-465**, I architected a full-stack web application using Angular (frontend), Node.js/Express (backend), MongoDB (database), and Docker (containerization). That project required sophisticated data structure decisions for real-time data handling, validation pipelining, and efficient document queries—directly reinforcing the algorithmic thinking demonstrated in this capstone's graph-based world system and priority queue event handling.
+
+#### **2. Software Engineering & Design Patterns**
+
+The refactored architecture showcases enterprise-level software design:
+
+- **Object-oriented principles:** Monolithic procedural code was decomposed into cohesive classes (Player, Room, Inventory, Combat) with clear single responsibilities, reducing coupling and improving testability.
+- **Layered architecture:** Separation of concerns across game logic, persistence, and API layers enables independent development, testing, and deployment.
+- **Repository pattern:** MongoDB access is abstracted through a repository layer, decoupling game logic from database implementation details and enabling easy switching of persistence mechanisms.
+- **API design:** RESTful endpoints with proper HTTP semantics, error handling, and status codes demonstrate understanding of distributed systems and client-server architecture.
+
+#### **3. Database Design & Persistence**
+
+Comprehensive MongoDB integration demonstrates database maturity:
+
+- **Multi-collection schema:** Five interconnected collections (players, inventory, rooms, game_state, game_sessions) model complex relationships while maintaining normalization principles where beneficial.
+- **Schema validation:** JSON Schema pre-write validation ensures data integrity at the database layer, catching invalid documents before persistence—a critical production practice often overlooked in student projects.
+- **Indexing strategy:** Unique indexes on slot identifiers and TTL indexes on session events optimize query performance and implement automatic data lifecycle management.
+- **Transaction safety & reliability:** Proper error handling and validation gates prevent corruption, with admin endpoints providing visibility into persisted state for debugging and analytics.
+
+#### **4. Collaboration & Communication**
+
+While this capstone was individually developed, my approach emphasizes practices essential to team environments:
+
+- **Code organization & documentation:** Clear module structure, docstrings, and README documentation enable other developers to understand and extend the codebase.
+- **Version control discipline:** Consistent commit messages and logical separation of concerns reflect professional development habits that enable code review and maintenance.
+- **Debugging & transparency:** Comprehensive admin endpoints (`/admin/sessions`, `/admin/replay/<slot>`) and detailed logging provide visibility into system behavior—critical for supporting other developers or stakeholders who rely on the system.
+- **Clear communication of constraints:** End-user documentation (README-offline.txt, inline helper comments, installer helpers) communicates system capabilities and limitations, preventing misuse and support friction. These practices translate directly to professional settings where clear documentation reduces onboarding time and support overhead.
+- **Self-directed problem-solving:** Working independently on this capstone has strengthened my ability to diagnose complex issues (PyInstaller bundling, Windows installer sequencing, Python 3.14 compatibility), a skillset essential for team environments where I can independently tackle assigned problems and contribute solutions without constant guidance.
+
+#### **5. Security Considerations**
+
+Though not the primary focus, security principles are embedded throughout:
+
+- **Input validation:** All user-facing inputs (commands, slot names, API payloads) are validated against strict schemas before processing.
+- **Schema enforcement:** JSON Schema validation prevents injection of unexpected fields or malformed data that could cause runtime errors or unexpected behavior.
+- **Secure defaults:** The game runs in offline mode without requiring external dependencies, reducing attack surface. Save/load is opt-in, requiring explicit MongoDB setup.
+- **Access patterns:** Admin endpoints are documented but not protected (appropriate for a capstone); in production, these would require authentication/authorization (e.g., JWT tokens, API key validation).
+
+*Security experience outside capstone:* In **CS-465**, I studied implementing secure coding practices into production environments, including input sanitization, parameterized queries, environment variable management for secrets, and defense against common web vulnerabilities (OWASP Top 10). Additionally, I developed a **custom encryption algorithm from scratch** (in a cryptography course), giving me hands-on understanding of symmetric/asymmetric encryption, key management, and the pitfalls of homegrown cryptography—reinforcing why established, peer-reviewed libraries should be used in production rather than custom implementations.
+
+### Artifacts Overview
+
+This portfolio contains three integrated artifacts that collectively demonstrate full-stack development capabilities:
+
+1. **Algorithms & Data Structures:** Game engine with graph-based pathfinding, priority queues, and efficient lookup structures. Evidence: `game/world_graph.py`, `game/event_system.py`, BFS routing implementation.
+
+2. **Database Integration:** MongoDB persistence layer with schema validation, multi-collection design, and analytics endpoints. Evidence: `game/database.py` with JSON Schema validation, admin query methods, session event logging.
+
+3. **Software Engineering & Distribution:** Complete refactoring from procedural to modular OOP, plus production packaging (PyInstaller .exe, Inno Setup installer, Docker containerization). Evidence: `game/` package structure, `api.py` REST layer, build scripts, installer helpers.
+
+These artifacts work together to demonstrate not just isolated technical competencies, but the ability to integrate them into a cohesive, deployable system that users can actually download, install, and run—a crucial distinction between academic exercises and professional work.
+
+### Professional Goals & Career Readiness
+
+Completing this capstone has clarified my professional direction: I am passionate about leveraging technical skills to solve business problems and build data tools that create competitive advantage. Rather than pure infrastructure or utility development, I want to use my programming expertise—database design, backend systems, data pipelines—to enable business decisions and automate workflows for myself and my team.
+
+This capstone's MongoDB integration, admin query endpoints, and session event logging reflect this philosophy: technical implementation in service of business insight. My CS-465 full-stack project reinforced this vision; I was not simply building web pages, but creating systems that translate business requirements into data-driven tools. Going forward, I want to work on roles where I can apply software engineering rigor to data challenges: building ETL pipelines, designing analytics systems, creating automation tools, or developing internal platforms that empower non-technical teams with data insights.
+
+The problem-solving approach demonstrated here—debugging Python 3.14 wheel issues, hardening Windows installer sequencing, tracing PyMongo bundling problems—reflects the resilience and pragmatism needed in professional settings. Rather than accepting "it doesn't work," I iteratively diagnosed root causes, tested fallbacks, and delivered a hardened solution. This mindset translates well to the intersection of technology and business: when a tool doesn't serve the business need, adapt the tool rather than abandon the goal.
+
+I am ready to contribute to organizations where I can use my technical foundation to build data tools, solve business problems, and empower teams with systems that drive informed decisions.
+
+---
+
 # Haunted Mansion Escape
 
 A fully-featured text-based adventure game with modular architecture, MongoDB persistence, web API, and Windows installer distribution. Built for CS-499 Capstone.
@@ -62,7 +148,13 @@ Then open [http://localhost:8000](http://localhost:8000)
 - TTL-based retention policies for data lifecycle
 - Admin endpoints for game inspection and debugging
 
+## Code Review: Original Project
 
+Before enhancements, the original IT-140 project was reviewed for quality and architecture:
+
+**[Code Review Video](https://youtu.be/A6rpyahVyg8)** - Initial project walkthrough (beginning of course)
+
+This video captures the starting point before the CS-499 capstone enhancements were implemented.
 
 ### Database Schema
 
